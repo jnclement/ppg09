@@ -116,7 +116,7 @@ bool check_bad_jet_eta(float jet_eta, float zvertex, float jet_radius) {
   return jet_eta < minlimit || jet_eta > maxlimit;
 }
 
-void check_dphicut(float lphi, float sphi)
+bool check_dphicut(float lphi, float sphi)
 {
   return abs(get_dphi(lphi, sphi)) > min_dphi;
 }
@@ -130,7 +130,241 @@ void filter_jets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_e
     }
 }
 
-int analyze_segment_data(int nunnumber, int iseg, int nseg)
+int analyze_segment_data(int runnumber, int iseg, int nseg)
 {
   TChain chain("jet_tree");
   
+  for(int i=iseg; i<iseg+nseg; ++i)
+    {
+      chain.Add(("input/inputfile_"+to_string(i)+".root").c_str());
+    }
+
+  float zvtx;
+  long long unsigned int trigvec;
+  float jet_e[100];
+  float jet_pt[100];
+  float jet_et[100];
+  float jet_eta[100];
+  float jet_phi[100];
+  float jet_t[100];
+  float jet_pt_calib[100];
+  int jet_n;
+  int calib_jet_n;
+
+  chain.SetBranchAddress("zvtx",&zvtx);
+  chain.SetBranchAddress("triggervec",&trigvec);
+  chain.SetBranchAddress("jet_e",jet_e);
+  chain.SetBranchAddress("jet_pt",jet_pt);
+  chain.SetBranchAddress("jet_et",jet_et);
+  chain.SetBranchAddress("jet_eta",jet_eta);
+  chain.SetBranchAddress("jet_phi",jet_phi);
+  chain.SetBranchAddress("jet_t",jet_t);
+  chain.SetBranchAddress("jet_pt_calib",jet_pt_calib);
+  chain.SetBranchAddress("jet_n",&jet_n);
+  chain.SetBranchAddress("calib_jet_n",&calib_jet_n);
+
+  TFile* fjt = TFile::Open("output_jetefficiency.root","READ");
+  TF1* jt[3];
+  jt[0] = (TF1*)fjt->Get("jettrig_04_pt_nominal");
+  jt[1] = (TF1*)fjt->Get("jettrig_04_pt_up");
+  jt[2] = (TF1*)fjt->Get("jettrig_04_pt_down");
+
+  TFile* fmb = TFile::Open("output_mbdefficiency.root","READ");
+  TF1* mbt[3];
+  mbt[0] = (TF1*)fmb->Get("mbdtrig04_nominal");
+  mbt[1] = (TF1*)fmb->Get("mbdtrig04_up");
+  mbt[2] = (TF1*)fmb->Get("mbdtrig04_down");
+
+  TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
+  TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
+  TH1D *h_event_passed = new TH1D("h_event_passed", ";Event Number", 1, 0, 1);
+
+  TH1D *h_recojet_pt_record_nocut_all = new TH1D("h_recojet_pt_record_nocut_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_all = new TH1D("h_recojet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex30 = new TH1D("h_recojet_pt_record_nocut_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+
+  TH1D *h_calibjet_pt_all = new TH1D("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_all_jetup = new TH1D("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_all_jetdown = new TH1D("h_calibjet_pt_all_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_all = new TH1D("h_calibjet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_all_jetup = new TH1D("h_calibjet_pt_record_all_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_all_jetdown = new TH1D("h_calibjet_pt_record_all_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  
+  TH1D *h_calibjet_pt_zvertex30 = new TH1D("h_calibjet_pt_zvertex30", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_jetup = new TH1D("h_calibjet_pt_zvertex30_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_jetdown = new TH1D("h_calibjet_pt_zvertex30_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_mbdup = new TH1D("h_calibjet_pt_zvertex30_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_mbddown = new TH1D("h_calibjet_pt_zvertex30_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_zvertex30 = new TH1D("h_calibjet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_jetup = new TH1D("h_calibjet_pt_record_zvertex30_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_jetdown = new TH1D("h_calibjet_pt_record_zvertex30_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_mbdup = new TH1D("h_calibjet_pt_record_zvertex30_mbdup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_mbddown = new TH1D("h_calibjet_pt_record_zvertex30_mbddown", ";p_{T} [GeV]", 1000, 0, 100);  
+
+  TH1D *h_calibjet_pt_zvertex60 = new TH1D("h_calibjet_pt_zvertex60", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_jetup = new TH1D("h_calibjet_pt_zvertex60_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_jetdown = new TH1D("h_calibjet_pt_zvertex60_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_mbdup = new TH1D("h_calibjet_pt_zvertex60_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_mbddown = new TH1D("h_calibjet_pt_zvertex60_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_zvertex60 = new TH1D("h_calibjet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_jetup = new TH1D("h_calibjet_pt_record_zvertex60_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_jetdown = new TH1D("h_calibjet_pt_record_zvertex60_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_mbdup = new TH1D("h_calibjet_pt_record_zvertex60_mbdup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_mbddown = new TH1D("h_calibjet_pt_record_zvertex60_mbddown", ";p_{T} [GeV]", 1000, 0, 100);
+
+  long long unsigned int nevt = chain.GetEntries();
+  bool bgdj, bgnj, z30, z60, is22, is18;
+  vector<bool> jet_filter = {};
+
+  for(long long unsigned int i=0; i<nevt; ++i)
+    {
+      chain.GetEntry(i);
+      is22 = (trigvec >> 22) & 1;
+      //is18 = (trigvec >> 18) & 1;
+      if(!is22) continue;
+      z30 = abs(zvtx) < 30;
+      z60 = abs(zvtx) < 60;
+      if(abs(zvtx)>1000) zvtx = 0;
+
+      bgdj = false;
+      bgnj = false;
+
+      int lji = -1;
+      int sji = -1;
+      get_l_sl_jet(lji,sji,jet_pt,jet_n);
+      if(sji < 0 || lji < 0) continue;
+
+      bool dijetcut = check_dphicut(jet_phi[lji],jet_phi[sji]);
+      bool tcut = abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]-jet_t[sji])>3;
+
+      bgdj = tcut || dijetcut;
+
+      int njg5 = 0;
+      for(int j=0; j<jet_n; ++j)
+	{
+	  if(jet_pt[j]>5) ++njg5;
+	}
+      if(njg5>9) bgnj = true;
+
+      
+
+      double ljpt = jet_pt[lji];
+
+      double jeff[3];
+      double meff[3];
+
+      for(int j=0; j<3; ++j)
+	{
+	  jeff[j] = jt[j]->Eval(ljpt);
+	  if(jeff[j]<0.01) jeff[j]=0.01;
+	  meff[j] = mbt[j]->Eval(ljpt);
+	  if(meff[j]<0.01) meff[j]=0.01;
+	}
+
+      double maxeff = 0.95;
+      filter_jets(jet_filter, jet_e, jet_pt, jet_eta, zvtx, jet_n);
+
+      for(int j=0; j<jet_filter.size(); ++j)
+	{
+	  if(jet_filter.at(j)) continue;
+
+	  h_recojet_pt_record_nocut_all->Fill(jet_pt[j]);
+	  if(!bgnj && !bgdj) h_recojet_pt_record_all->Fill(jet_pt[j]);
+
+	  if(z60)
+	    {
+	      h_recojet_pt_record_nocut_zvertex60->Fill(jet_pt[j]);
+	      if(!bgnj && !bgdj) h_recojet_pt_record_zvertex60->Fill(jet_pt[j]);
+	      if(z30)
+		{
+		  h_recojet_pt_record_nocut_zvertex30->Fill(jet_pt[j]);
+		  if(!bgnj && !bgdj) h_recojet_pt_record_zvertex30->Fill(jet_pt[j]);
+		}
+	    }
+	}
+      if(bgnj || bgdj) continue;
+
+      for(int j=0; j<jet_n; ++j)
+	{
+	  if(jet_filter.at(j)) continue;
+	  h_calibjet_pt_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
+          h_calibjet_pt_all_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/maxeff);
+          h_calibjet_pt_all_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/maxeff);
+          h_calibjet_pt_record_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
+          h_calibjet_pt_record_all_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/maxeff);
+          h_calibjet_pt_record_all_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/maxeff);
+
+	  if(z60)
+	    {
+	      h_calibjet_pt_zvertex60->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_zvertex60_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_zvertex60_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_zvertex60_mbdup->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[1]*1.0/maxeff);
+	      h_calibjet_pt_zvertex60_mbddown->Fill(jet_pt_calib[j], 1.0/jeff[0]* 1.0/meff[2]*1.0/maxeff);
+	      h_calibjet_pt_record_zvertex60->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_record_zvertex60_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_record_zvertex60_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/meff[0]*1.0/maxeff);
+	      h_calibjet_pt_record_zvertex60_mbdup->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[1]*1.0/maxeff);
+	      h_calibjet_pt_record_zvertex60_mbddown->Fill(jet_pt_calib[j], 1.0/jeff[0]* 1.0/meff[2]*1.0/maxeff);
+	      if(z30)
+		{
+		  h_calibjet_pt_zvertex30->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_zvertex30_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_zvertex30_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_zvertex30_mbdup->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[1]*1.0/maxeff);
+		  h_calibjet_pt_zvertex30_mbddown->Fill(jet_pt_calib[j], 1.0/jeff[0]* 1.0/meff[2]*1.0/maxeff);
+		  h_calibjet_pt_record_zvertex30->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_record_zvertex30_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_record_zvertex30_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/meff[0]*1.0/maxeff);
+		  h_calibjet_pt_record_zvertex30_mbdup->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/meff[1]*1.0/maxeff);
+		  h_calibjet_pt_record_zvertex30_mbddown->Fill(jet_pt_calib[j], 1.0/jeff[0]* 1.0/meff[2]*1.0/maxeff);
+		}
+	    }
+	}
+    }
+
+  TFile* outf = TFile::Open(("output/output_"+to_string(runnumber)+"_"+to_string(iseg)+"_"+to_string(iseg+nseg)+".root").c_str(),"RECREATE");
+  outf->cd();
+
+  h_recojet_pt_record_nocut_all->Write();
+  h_recojet_pt_record_all->Write();
+  h_recojet_pt_record_nocut_zvertex30->Write();
+  h_recojet_pt_record_zvertex30->Write();
+  h_recojet_pt_record_nocut_zvertex60->Write();
+  h_recojet_pt_record_zvertex60->Write();
+
+  h_calibjet_pt_all->Write();
+  h_calibjet_pt_all_jetup->Write();
+  h_calibjet_pt_all_jetdown->Write();
+  h_calibjet_pt_record_all->Write();
+  h_calibjet_pt_record_all_jetup->Write();
+  h_calibjet_pt_record_all_jetdown->Write();
+
+  h_calibjet_pt_zvertex30->Write();
+  h_calibjet_pt_zvertex30_jetup->Write();
+  h_calibjet_pt_zvertex30_jetdown->Write();
+  h_calibjet_pt_zvertex30_mbdup->Write();
+  h_calibjet_pt_zvertex30_mbddown->Write();
+  h_calibjet_pt_record_zvertex30->Write();
+  h_calibjet_pt_record_zvertex30_jetup->Write();
+  h_calibjet_pt_record_zvertex30_jetdown->Write();
+  h_calibjet_pt_record_zvertex30_mbdup->Write();
+  h_calibjet_pt_record_zvertex30_mbddown->Write();
+
+  h_calibjet_pt_zvertex60->Write();
+  h_calibjet_pt_zvertex60_jetup->Write();
+  h_calibjet_pt_zvertex60_jetdown->Write();
+  h_calibjet_pt_zvertex60_mbdup->Write();
+  h_calibjet_pt_zvertex60_mbddown->Write();
+  h_calibjet_pt_record_zvertex60->Write();
+  h_calibjet_pt_record_zvertex60_jetup->Write();
+  h_calibjet_pt_record_zvertex60_jetdown->Write();
+  h_calibjet_pt_record_zvertex60_mbdup->Write();
+  h_calibjet_pt_record_zvertex60_mbddown->Write();
+
+  outf->Close();
+  
+}

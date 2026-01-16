@@ -227,7 +227,7 @@ int analyze_segment_data(int runnumber, int iseg, int nseg)
       if(!is22) continue;
       z30 = abs(zvtx) < 30;
       z60 = abs(zvtx) < 60;
-      if(abs(zvtx)>1000) zvtx = 0;
+      if(abs(zvtx)>990) zvtx = 0;
 
       bgdj = false;
       bgnj = false;
@@ -237,7 +237,7 @@ int analyze_segment_data(int runnumber, int iseg, int nseg)
       get_l_sl_jet(lji,sji,jet_pt,jet_n);
       if(sji < 0 || lji < 0) continue;
 
-      bool dijetcut = check_dphicut(jet_phi[lji],jet_phi[sji]);
+      bool dijetcut = check_dphicut(jet_phi[lji],jet_phi[sji]) && jet_e[sji]/jet_e[lji]>0.3;
       bool tcut = abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]-jet_t[sji])>3;
 
       bgdj = tcut || dijetcut;
@@ -286,7 +286,7 @@ int analyze_segment_data(int runnumber, int iseg, int nseg)
 	    }
 	}
       if(bgnj || bgdj) continue;
-
+      h_event_passed->Fill(0.5);
       for(int j=0; j<jet_n; ++j)
 	{
 	  if(jet_filter.at(j)) continue;
@@ -325,7 +325,7 @@ int analyze_segment_data(int runnumber, int iseg, int nseg)
 	    }
 	}
     }
-
+  h_event_all->Fill(0.5,chain.GetEntries());
   TFile* outf = TFile::Open(("output/output_"+to_string(runnumber)+"_"+to_string(iseg)+"_"+to_string(iseg+nseg)+".root").c_str(),"RECREATE");
   outf->cd();
 

@@ -27,12 +27,8 @@ void get_l_sl_jet(int& lindex, int& sindex, float* jet_pt, int jet_n)
 
 float get_dphi(float phi1, float phi2)
 {
-  float dphi = phi1-phi2;
-  float dphim = phi1-phi2-2*M_PI;
-  float dphip = phi1-phi2+2*M_PI;
-
-  if(abs(dphim) < abs(dphi)) dphi = dphim;
-  if(abs(dphip) < abs(dphi)) dphi = dphip;
+  float dphi = abs(phi1-phi2);
+  if(dphi > M_PI) dphi = 2*M_PI-dphi;
 
   return dphi;
 }
@@ -140,7 +136,7 @@ int analyze_segment_data(int iseg, int nseg)
     }
 
   float zvtx;
-  long long unsigned int trigvec;
+  long long unsigned int trigvec = 0;
   float jet_e[100];
   float jet_pt[100];
   float jet_et[100];
@@ -153,9 +149,9 @@ int analyze_segment_data(int iseg, int nseg)
 
   chain.SetBranchAddress("zvtx",&zvtx);
   chain.SetBranchAddress("triggervec",&trigvec);
-  chain.SetBranchAddress("jet_e",jet_e);
+  chain.SetBranchAddress("jet_et",jet_e);
   chain.SetBranchAddress("jet_pt",jet_pt);
-  chain.SetBranchAddress("jet_et",jet_et);
+  chain.SetBranchAddress("jet_etrans",jet_et);
   chain.SetBranchAddress("jet_eta",jet_eta);
   chain.SetBranchAddress("jet_phi",jet_phi);
   chain.SetBranchAddress("jet_t",jet_t);
@@ -225,8 +221,8 @@ int analyze_segment_data(int iseg, int nseg)
       is22 = (trigvec >> 22) & 1;
       //is18 = (trigvec >> 18) & 1;
       if(!is22) continue;
-      z30 = abs(zvtx) < 30;
-      z60 = abs(zvtx) < 60;
+      z30 = abs(zvtx) < 30 && zvtx!=0;
+      z60 = abs(zvtx) < 60 && zvtx!=0;
       if(abs(zvtx)>990) zvtx = 0;
 
       bgdj = false;
@@ -234,18 +230,18 @@ int analyze_segment_data(int iseg, int nseg)
 
       int lji = -1;
       int sji = -1;
-      get_l_sl_jet(lji,sji,jet_pt,jet_n);
-      if(sji < 0 || lji < 0) continue;
+      get_l_sl_jet(lji,sji,jet_e,jet_n);
+      if(lji < 0) continue;
 
-      bool dijetcut = check_dphicut(jet_phi[lji],jet_phi[sji]) && jet_e[sji]/jet_e[lji]>0.3;
-      bool tcut = abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]-jet_t[sji])>3;
+      bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]<0.3 || sji < 0;
+      bool tcut = abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]*17.6-jet_t[sji]*17.6)>3;
 
       bgdj = tcut || dijetcut;
 
       int njg5 = 0;
       for(int j=0; j<jet_n; ++j)
 	{
-	  if(jet_pt[j]>5) ++njg5;
+	  if(jet_e[j]>5) ++njg5;
 	}
       if(njg5>9) bgnj = true;
 
@@ -366,5 +362,7 @@ int analyze_segment_data(int iseg, int nseg)
   h_calibjet_pt_record_zvertex60_mbddown->Write();
 
   outf->Close();
+
+  return 0;
   
 }

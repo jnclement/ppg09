@@ -32,12 +32,7 @@ void get_l_sl_jet(int& lindex, int& sindex, float* jet_pt, int jet_n)
 float get_dphi(float phi1, float phi2)
 {
   float dphi = phi1-phi2;
-  float dphim = phi1-phi2-2*M_PI;
-  float dphip = phi1-phi2+2*M_PI;
-
-  if(abs(dphim) < abs(dphi)) dphi = dphim;
-  if(abs(dphip) < abs(dphi)) dphi = dphip;
-
+  if(dphi > M_PI) dphi = 2*M_PI-dphi;
   return dphi;
 }
 
@@ -316,7 +311,6 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
     }
 
   float zvtx;
-  long long unsigned int trigvec;
   float jet_e[100];
   float jet_pt[100];
   float jet_et[100];
@@ -335,9 +329,9 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   int calib_jet_n;
 
   chain.SetBranchAddress("zvtx",&zvtx);
-  chain.SetBranchAddress("jet_e",jet_e);
+  chain.SetBranchAddress("jet_et",jet_e);
   chain.SetBranchAddress("jet_pt",jet_pt);
-  chain.SetBranchAddress("jet_et",jet_et);
+  chain.SetBranchAddress("jet_etrans",jet_et);
   chain.SetBranchAddress("jet_eta",jet_eta);
   chain.SetBranchAddress("jet_phi",jet_phi);
   chain.SetBranchAddress("jet_t",jet_t);
@@ -499,8 +493,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   for(long long unsigned int i=0; i<nevt; ++i)
     {
       chain.GetEntry(i);
-      z30 = abs(zvtx) < 30;
-      z60 = abs(zvtx) < 60;
+      z30 = abs(zvtx) < 30 && zvtx!=0;
+      z60 = abs(zvtx) < 60 && zvtx!=0;
       bool has_zvtx = true;
       if(abs(zvtx)>990)
 	{
@@ -536,18 +530,18 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 
       int lji = -1;
       int sji = -1;
-      get_l_sl_jet(lji,sji,jet_pt,jet_n);
-      if(sji < 0 || lji < 0) continue;
+      get_l_sl_jet(lji,sji,jet_e,jet_n);
+      if(sji < 0) continue;
       if(jet_pt[lji] > recojet_pt_max) continue;
 
-      bool dijetcut = check_dphicut(jet_phi[lji],jet_phi[sji]) && jet_e[sji]/jet_e[lji]>0.3;
+      bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]>0.3;
       
       bgdj = dijetcut;
 
       int njg5 = 0;
       for(int j=0; j<jet_n; ++j)
 	{
-	  if(jet_pt[j]>5) ++njg5;
+	  if(jet_e[j]>5) ++njg5;
 	}
       if(njg5>9) bgnj = true;
 

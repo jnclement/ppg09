@@ -13,9 +13,15 @@ else
     exit -1
 fi
 N=$(( 100 * $1 ))
-tail -n +$N seglist_data.list | head -n 100 > thelist.list
+tail -n +$N /sphenix/user/jocl/projects/ppg09/seglist_data.list | head -n 100 > thelist.list
+NSEG=`cat thelist.list | wc -l`
 mkdir input
-for i in {0..99}; do
+cp /sphenix/user/jocl/projects/ppg09/input_zvertexreweight.root  .
+cp /sphenix/user/jocl/projects/ppg09/output_jetefficiency.root  .
+cp /sphenix/user/jocl/projects/ppg09/output_mbdefficiency.root .
+cp /sphenix/user/jocl/projects/ppg09/unfold_Def.h .
+cp /sphenix/user/jocl/projects/ppg09/analyze_segment_data.C .
+for i in $(seq 0 $NSEG); do
     n=$(( $i + 1 ))
     FILENAME=`sed -n "$n"p thelist.list`
     cp $FILENAME input/inputfile_$(( $N + $i )).root
@@ -23,6 +29,6 @@ done
 
 mkdir output
 
-root -l -b -q "analyze_segment_data.C($N,100)"
-/sphenix/user/jocl/projects/ppg09/ana_output/dat -p
+root -l -b -q "analyze_segment_data.C($N,$NSEG)"
+mkdir /sphenix/user/jocl/projects/ppg09/ana_output/dat -p
 cp output/* /sphenix/user/jocl/projects/ppg09/ana_output/dat

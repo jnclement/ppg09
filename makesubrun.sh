@@ -1,10 +1,13 @@
 #!/bin/bash
 
+if [ $# -lt 2 ]; then
+    echo "need TAG and ISDAT args (tag should be data if data, and jetxx otherwise)"
+    exit 1
+fi
 TAG=$1
 ISDAT=$2
 TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 99))
 TOSUB=$(( $TOSUB / 100 ))
-
 BASENAME="condor_${TAG}"
 PREFIX="."
 SUBNAME="${BASENAME}.sub"

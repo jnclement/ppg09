@@ -5,6 +5,8 @@ for rn in `cat listrunnumber.txt`; do
     ls /sphenix/tg/tg01/jets/jocl/chi2/$rn/*20260116_dat*chi2file* >> seglist_data.list
 done
 
+exit 0
+
 for stype in jet5 jet10 jet15 jet20 jet30 jet50 jet70; do
     rm seglist_$stype.list
     for i in {0..10000}; do

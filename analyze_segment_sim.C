@@ -225,7 +225,9 @@ void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_
   for(int i=0; i<jet_n; ++i)
     {
       if(jet_filter.at(i)) continue;
-      double calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
+      double calib_pt;
+      if(jer != 0) double calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
+      else calib_pt = jet_pt[i];
       if (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt]) continue;
       calibjet_pt.push_back(calib_pt);
       calibjet_eta.push_back(jet_eta[i]);
@@ -252,49 +254,49 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 {
 
   double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000;
-  if (runtype == "MB") {
+  if (runtype == "mb") {
     if (jet_rad == 0.2) {truthjet_pt_min = 0; truthjet_pt_max = 5; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 0; truthjet_pt_max = 6; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet5GeV") {
+  } else if (runtype == "jet5") {
     if (jet_rad == 0.2) {truthjet_pt_min = 5; truthjet_pt_max = 12; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet10GeV") {
+  } else if (runtype == "jet10") {
     if (jet_rad == 0.2) {truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet15GeV") {
+  } else if (runtype == "jet15") {
     if (jet_rad == 0.2) {truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet20GeV") {
+  } else if (runtype == "jet20") {
     if (jet_rad == 0.2) {truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet30GeV") {
+  } else if (runtype == "jet30") {
     if (jet_rad == 0.2) {truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet50GeV") {
+  } else if (runtype == "jet50") {
     if (jet_rad == 0.2) {truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
-  } else if (runtype == "Jet70GeV") {
+  } else if (runtype == "jet70") {
     if (jet_rad == 0.2) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
@@ -406,6 +408,11 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   // Nominal histograms
   TH2D *h_respmatrix_all; TH1D *h_truth_all, *h_measure_all, *h_fake_all, *h_miss_all, *h_matchedtruth_weighted_all, *h_matchedtruth_unweighted_all, *h_measure_unweighted_all;
   build_hist("all", h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all, h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all);
+
+    TH2D *h_respmatrix_all_nosmear; TH1D *h_truth_all_nosmear, *h_measure_all_nosmear, *h_fake_all_nosmear, *h_miss_all_nosmear, *h_matchedtruth_weighted_all_nosmear, *h_matchedtruth_unweighted_all_nosmear, *h_measure_unweighted_all_nosmear;
+  build_hist("all_nosmear", h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear, h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear);
+
+  
   TH2D *h_respmatrix_zvertex30; TH1D *h_truth_zvertex30, *h_measure_zvertex30, *h_fake_zvertex30, *h_miss_zvertex30, *h_matchedtruth_weighted_zvertex30, *h_matchedtruth_unweighted_zvertex30, *h_measure_unweighted_zvertex30;
   build_hist("zvertex30", h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30, h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30);
   TH2D *h_respmatrix_zvertex60; TH1D *h_truth_zvertex60, *h_measure_zvertex60, *h_fake_zvertex60, *h_miss_zvertex60, *h_matchedtruth_weighted_zvertex60, *h_matchedtruth_unweighted_zvertex60, *h_measure_unweighted_zvertex60;
@@ -485,6 +492,9 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   vector<bool> jet_filter, tjet_filter;
   std::vector<float> goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched;
   std::vector<float> calibjet_pt, calibjet_eta, calibjet_phi, calibjet_matched;
+
+  std::vector<float> calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear;
+    
   std::vector<float> calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup;
   std::vector<float> calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown;
   std::vector<float> calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup;
@@ -584,6 +594,9 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       h_event_passed->Fill(0.5);
       get_truthjet(goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, tjet_filter, tjet_n, tjet_pt, tjet_eta, tjet_phi);
       get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.1);
+
+      get_calibjet(calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0);
+      
       get_calibjet(calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1.06, 0.1);
       get_calibjet(calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 0.94, 0.1);
       get_calibjet(calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.15);
@@ -595,6 +608,14 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
                          scale_zvertexreweight, f_reweightfunc_all,
                          calibjet_pt, calibjet_matched,
                          goodtruthjet_pt, goodtruthjet_matched);
+
+      fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
+                         h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
+                         scale_zvertexreweight, f_reweightfunc_all,
+                         calibjet_pt_nosmear, calibjet_matched,
+                         goodtruthjet_pt, goodtruthjet_matched);
+
+	    
     fill_response_matrix(h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup,
                          h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup,
                          scale_zvertexreweight, f_reweightfunc_all_jetup,
@@ -768,6 +789,10 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 
   // Nominal histograms
   h_truth_all->Write(); h_measure_all->Write(); h_respmatrix_all->Write(); h_fake_all->Write(); h_miss_all->Write(); h_matchedtruth_weighted_all->Write(); h_matchedtruth_unweighted_all->Write(); h_measure_unweighted_all->Write();
+
+  h_truth_all_nosmear->Write(); h_measure_all_nosmear->Write(); h_respmatrix_all_nosmear->Write(); h_fake_all_nosmear->Write(); h_miss_all_nosmear->Write(); h_matchedtruth_weighted_all_nosmear->Write(); h_matchedtruth_unweighted_all_nosmear->Write(); h_measure_unweighted_all_nosmear->Write();
+
+  
   h_truth_zvertex30->Write(); h_measure_zvertex30->Write(); h_respmatrix_zvertex30->Write(); h_fake_zvertex30->Write(); h_miss_zvertex30->Write(); h_matchedtruth_weighted_zvertex30->Write(); h_matchedtruth_unweighted_zvertex30->Write(); h_measure_unweighted_zvertex30->Write();
   h_truth_zvertex60->Write(); h_measure_zvertex60->Write(); h_respmatrix_zvertex60->Write(); h_fake_zvertex60->Write(); h_miss_zvertex60->Write(); h_matchedtruth_weighted_zvertex60->Write(); h_matchedtruth_unweighted_zvertex60->Write(); h_measure_unweighted_zvertex60->Write();
   // JES up/down histograms

@@ -6,8 +6,8 @@ if [ $# -lt 2 ]; then
 fi
 TAG=$1
 ISDAT=$2
-TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 99))
-TOSUB=$(( $TOSUB / 100 ))
+TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 29))
+TOSUB=$(( $TOSUB / 30 ))
 BASENAME="condor_${TAG}"
 PREFIX="."
 SUBNAME="${BASENAME}.sub"
@@ -15,7 +15,9 @@ SUBNAME="${BASENAME}.sub"
 EXE="sim_condor.sh"
 if [[ $ISDAT -ne 0 ]]; then
     EXE="data_condor.sh"
+    TOSUB=`cat listrunnumber.txt | wc -l`
 fi
+#TOSUB=1
 echo "executable = ${EXE}" > $PREFIX/$SUBNAME
 echo "arguments = \$(Process) ${TAG}" >> $PREFIX/$SUBNAME
 echo "output = output/out/output_${BASENAME}_\$(Process).out" >> $PREFIX/$SUBNAME

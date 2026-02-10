@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.521
+source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.533
 source /opt/sphenix/core/bin/setup_local.sh "/sphenix/user/jocl/projects/testinstall"
 export HOME=/sphenix/u/jocl
 export TESTINSTALL=/sphenix/user/jocl/projects/testinstall
@@ -12,8 +12,9 @@ else
     echo condor scratch NOT set
     exit -1
 fi
-N=$(( 100 * $1 ))
-tail -n +$N /sphenix/user/jocl/projects/ppg09/seglist_data.list | head -n 100 > thelist.list
+N=$(( $1 + 1 ))
+RN=`head -n +$N /sphenix/user/jocl/projects/ppg09/listrunnumber.txt | tail -n 1`
+cat /sphenix/user/jocl/projects/ppg09/seglist_data.list | grep $RN > thelist.list
 NSEG=`cat thelist.list | wc -l`
 mkdir input
 cp /sphenix/user/jocl/projects/ppg09/input_zvertexreweight.root  .
@@ -24,7 +25,7 @@ cp /sphenix/user/jocl/projects/ppg09/analyze_segment_data.C .
 for i in $(seq 0 $NSEG); do
     n=$(( $i + 1 ))
     FILENAME=`sed -n "$n"p thelist.list`
-    cp $FILENAME input/inputfile_$(( $N + $i )).root
+    cp $FILENAME input/inputfile_$i.root
 done
 
 mkdir output

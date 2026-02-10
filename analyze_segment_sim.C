@@ -33,6 +33,7 @@ float get_dphi(float phi1, float phi2)
 {
   float dphi = phi1-phi2;
   if(dphi > M_PI) dphi = 2*M_PI-dphi;
+  if(dphi < -M_PI) dphi = 2*M_PI+dphi;
   return dphi;
 }
 
@@ -41,11 +42,10 @@ float get_deta(float eta1, float eta2)
   return eta1-eta2;
 }
 
-float get_dR(float eta1, float eta2, float phi1, float phi2)
+float get_dR(float eta1, float phi1, float eta2, float phi2)
 {
   float deta = get_deta(eta1, eta2);
   float dphi = get_dphi(phi1, phi2);
-
   return sqrt(deta*deta + dphi*dphi);
 }
 
@@ -143,7 +143,7 @@ void filter_tjets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_
       filter.push_back(jet_e[i]<0 || jet_pt[i]<1 || abs(jet_eta[i])>1.1-jet_rad);
     }
 }
-
+int sw = 0;
 void match_meas_truth(std::vector<float>& meas_eta, std::vector<float>& meas_phi, std::vector<float>& meas_matched, std::vector<float>& truth_eta, std::vector<float>& truth_phi, std::vector<float>& truth_matched, float jet_radius, bool has_zvertex) {
   meas_matched.assign(meas_eta.size(), -1);
   truth_matched.assign(truth_eta.size(), -1);
@@ -179,23 +179,31 @@ void match_meas_truth(std::vector<float>& meas_eta, std::vector<float>& meas_phi
 }
 
 void fill_response_matrix(TH1D*& h_truth, TH1D*& h_meas, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_meas_unw, double scale, TF1* f_reweight, std::vector<float>& meas_pt, std::vector<float>& meas_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched) {
+  
   for (int im = 0; im < meas_pt.size(); ++im) {
     double reweight_factor = f_reweight->Eval(meas_pt[im]);
+    
     if (meas_matched[im] < 0) {
+      
       h_meas->Fill(meas_pt[im], scale*reweight_factor);
       h_fake->Fill(meas_pt[im], scale*reweight_factor);
       // For reweighting
       h_meas_unw->Fill(meas_pt[im], scale);
+      
     } else {
+      
       h_meas->Fill(meas_pt[im], scale*reweight_factor);
       h_resp->Fill(meas_pt[im], truth_pt[meas_matched[im]], scale*reweight_factor);
       // For reweighting
       h_meas_unw->Fill(meas_pt[im], scale);
       h_matchtruth_unw->Fill(truth_pt[meas_matched[im]], scale);
       h_matchtruth_rec->Fill(truth_pt[meas_matched[im]], scale*reweight_factor);
+      
     }
   }
+  
   for (int it = 0; it < truth_pt.size(); ++it) {
+    
     if (truth_matched[it] < 0) {
       h_truth->Fill(truth_pt[it], scale);
       h_miss->Fill(truth_pt[it], scale);
@@ -226,7 +234,7 @@ void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_
     {
       if(jet_filter.at(i)) continue;
       double calib_pt;
-      if(jer != 0) double calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
+      if(jer != 0) calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
       else calib_pt = jet_pt[i];
       if (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt]) continue;
       calibjet_pt.push_back(calib_pt);
@@ -260,54 +268,62 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
     else if (jet_rad == 0.4) {truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
+    truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;
   } else if (runtype == "jet5") {
     if (jet_rad == 0.2) {truthjet_pt_min = 5; truthjet_pt_max = 12; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
+    truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;
   } else if (runtype == "jet10") {
     if (jet_rad == 0.2) {truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
+    truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;
   } else if (runtype == "jet15") {
     if (jet_rad == 0.2) {truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
+    truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;
   } else if (runtype == "jet20") {
     if (jet_rad == 0.2) {truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
+    truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;
   } else if (runtype == "jet30") {
     if (jet_rad == 0.2) {truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
+    truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;
   } else if (runtype == "jet50") {
     if (jet_rad == 0.2) {truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
+    truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;
   } else if (runtype == "jet70") {
     if (jet_rad == 0.2) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.3) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.4) {truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.5) {truthjet_pt_min = 75; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     else if (jet_rad == 0.6) {truthjet_pt_min = 79; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+    truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;
   }
 
   
   TChain chain("jet_tree");
   
-  for(int i=iseg; i<iseg+nseg; ++i)
+  for(int i=0; i<nseg; ++i)
     {
       chain.Add(("input/inputfile_"+to_string(i)+".root").c_str());
     }
@@ -343,10 +359,10 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 
   chain.SetBranchAddress("tjet_e",tjet_e);
   chain.SetBranchAddress("tjet_pt",tjet_pt);
-  chain.SetBranchAddress("tjet_et",tjet_et);
+  //chain.SetBranchAddress("tjet_et",tjet_et);
   chain.SetBranchAddress("tjet_eta",tjet_eta);
   chain.SetBranchAddress("tjet_phi",tjet_phi);
-  chain.SetBranchAddress("tjet_t",tjet_t);
+  //chain.SetBranchAddress("tjet_t",tjet_t);
   chain.SetBranchAddress("tjet_n",&tjet_n);
 
 
@@ -409,8 +425,11 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   TH2D *h_respmatrix_all; TH1D *h_truth_all, *h_measure_all, *h_fake_all, *h_miss_all, *h_matchedtruth_weighted_all, *h_matchedtruth_unweighted_all, *h_measure_unweighted_all;
   build_hist("all", h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all, h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all);
 
-    TH2D *h_respmatrix_all_nosmear; TH1D *h_truth_all_nosmear, *h_measure_all_nosmear, *h_fake_all_nosmear, *h_miss_all_nosmear, *h_matchedtruth_weighted_all_nosmear, *h_matchedtruth_unweighted_all_nosmear, *h_measure_unweighted_all_nosmear;
+  TH2D *h_respmatrix_all_nosmear; TH1D *h_truth_all_nosmear, *h_measure_all_nosmear, *h_fake_all_nosmear, *h_miss_all_nosmear, *h_matchedtruth_weighted_all_nosmear, *h_matchedtruth_unweighted_all_nosmear, *h_measure_unweighted_all_nosmear;
   build_hist("all_nosmear", h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear, h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear);
+
+  TH2D *h_respmatrix_zvertex60_nosmear; TH1D *h_truth_zvertex60_nosmear, *h_measure_zvertex60_nosmear, *h_fake_zvertex60_nosmear, *h_miss_zvertex60_nosmear, *h_matchedtruth_weighted_zvertex60_nosmear, *h_matchedtruth_unweighted_zvertex60_nosmear, *h_measure_unweighted_zvertex60_nosmear;
+  build_hist("zvertex60_nosmear", h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear, h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear);
 
   
   TH2D *h_respmatrix_zvertex30; TH1D *h_truth_zvertex30, *h_measure_zvertex30, *h_fake_zvertex30, *h_miss_zvertex30, *h_matchedtruth_weighted_zvertex30, *h_matchedtruth_unweighted_zvertex30, *h_measure_unweighted_zvertex30;
@@ -499,9 +518,12 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   std::vector<float> calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown;
   std::vector<float> calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup;
   std::vector<float> calibjet_pt_jerdown, calibjet_eta_jerdown, calibjet_phi_jerdown, calibjet_matched_jerdown;
+
+  cout << nevt << endl;
   
   for(long long unsigned int i=0; i<nevt; ++i)
     {
+            
       chain.GetEntry(i);
       z30 = abs(zvtx) < 30 && zvtx!=0;
       z60 = abs(zvtx) < 60 && zvtx!=0;
@@ -528,7 +550,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 	      tlji = j;
 	    }
 	}
-
+      
       if(tlji < 0) continue;
       if(ltjpt < truthjet_pt_min || ltjpt > truthjet_pt_max) continue;
       for(int j=0; j<tjet_n; ++j)
@@ -544,7 +566,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       if(sji < 0) continue;
       if(jet_pt[lji] > recojet_pt_max) continue;
 
-      bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]>0.3;
+      bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]<0.3;
       
       bgdj = dijetcut;
 
@@ -590,6 +612,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 		}
 	    }
 	}
+      
       if(bgnj || bgdj) continue;
       h_event_passed->Fill(0.5);
       get_truthjet(goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, tjet_filter, tjet_n, tjet_pt, tjet_eta, tjet_phi);
@@ -602,30 +625,30 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       get_calibjet(calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.15);
       get_calibjet(calibjet_pt_jerdown, calibjet_eta_jerdown, calibjet_phi_jerdown, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.05);
       
+      sw = 1;
       match_meas_truth(calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      sw = 0;
+      
       fill_response_matrix(h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all,
                          h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all,
                          scale_zvertexreweight, f_reweightfunc_all,
                          calibjet_pt, calibjet_matched,
                          goodtruthjet_pt, goodtruthjet_matched);
-
-      fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
-                         h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
-                         scale_zvertexreweight, f_reweightfunc_all,
-                         calibjet_pt_nosmear, calibjet_matched,
-                         goodtruthjet_pt, goodtruthjet_matched);
-
-	    
-    fill_response_matrix(h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup,
+      
+      
+      
+      fill_response_matrix(h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup,
                          h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup,
                          scale_zvertexreweight, f_reweightfunc_all_jetup,
                          calibjet_pt, calibjet_matched,
                          goodtruthjet_pt, goodtruthjet_matched);
-    fill_response_matrix(h_truth_all_jetdown, h_measure_all_jetdown, h_respmatrix_all_jetdown, h_fake_all_jetdown, h_miss_all_jetdown,
+      
+      fill_response_matrix(h_truth_all_jetdown, h_measure_all_jetdown, h_respmatrix_all_jetdown, h_fake_all_jetdown, h_miss_all_jetdown,
                          h_matchedtruth_weighted_all_jetdown, h_matchedtruth_unweighted_all_jetdown, h_measure_unweighted_all_jetdown,
                          scale_zvertexreweight, f_reweightfunc_all_jetdown,
                          calibjet_pt, calibjet_matched,
                          goodtruthjet_pt, goodtruthjet_matched);
+    
     if (z30) {
       fill_response_matrix(h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30,
                            h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30,
@@ -654,6 +677,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
                            goodtruthjet_pt, goodtruthjet_matched);
     }
     if (z60) {
+
+
       fill_response_matrix(h_truth_zvertex60, h_measure_zvertex60, h_respmatrix_zvertex60, h_fake_zvertex60, h_miss_zvertex60,
                            h_matchedtruth_weighted_zvertex60, h_matchedtruth_unweighted_zvertex60, h_measure_unweighted_zvertex60,
                            scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60,
@@ -770,6 +795,19 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
                                            scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerdown,
                                            calibjet_pt_jerdown, calibjet_matched_jerdown,
                                            goodtruthjet_pt, goodtruthjet_matched);
+    match_meas_truth(calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+    fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
+                         h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
+                         scale_zvertexreweight, f_reweightfunc_all,
+                         calibjet_pt_nosmear, calibjet_matched_nosmear,
+                         goodtruthjet_pt, goodtruthjet_matched);
+    if(z60)       fill_response_matrix(h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear,
+			   h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear,
+			   scale_zvertexreweight, f_reweightfunc_zvertex60,
+			   calibjet_pt_nosmear, calibjet_matched_nosmear,
+			   goodtruthjet_pt, goodtruthjet_matched);
+
+
   } // event loop end
   // Fill event histograms.
   h_event_all->Fill(0.5, chain.GetEntries());
@@ -791,6 +829,9 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   h_truth_all->Write(); h_measure_all->Write(); h_respmatrix_all->Write(); h_fake_all->Write(); h_miss_all->Write(); h_matchedtruth_weighted_all->Write(); h_matchedtruth_unweighted_all->Write(); h_measure_unweighted_all->Write();
 
   h_truth_all_nosmear->Write(); h_measure_all_nosmear->Write(); h_respmatrix_all_nosmear->Write(); h_fake_all_nosmear->Write(); h_miss_all_nosmear->Write(); h_matchedtruth_weighted_all_nosmear->Write(); h_matchedtruth_unweighted_all_nosmear->Write(); h_measure_unweighted_all_nosmear->Write();
+
+
+    h_truth_zvertex60_nosmear->Write(); h_measure_zvertex60_nosmear->Write(); h_respmatrix_zvertex60_nosmear->Write(); h_fake_zvertex60_nosmear->Write(); h_miss_zvertex60_nosmear->Write(); h_matchedtruth_weighted_zvertex60_nosmear->Write(); h_matchedtruth_unweighted_zvertex60_nosmear->Write(); h_measure_unweighted_zvertex60_nosmear->Write();
 
   
   h_truth_zvertex30->Write(); h_measure_zvertex30->Write(); h_respmatrix_zvertex30->Write(); h_fake_zvertex30->Write(); h_miss_zvertex30->Write(); h_matchedtruth_weighted_zvertex30->Write(); h_matchedtruth_unweighted_zvertex30->Write(); h_measure_unweighted_zvertex30->Write();

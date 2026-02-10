@@ -130,7 +130,7 @@ int analyze_segment_data(int iseg, int nseg)
 {
   TChain chain("jet_tree");
   
-  for(int i=iseg; i<iseg+nseg; ++i)
+  for(int i=0; i<nseg; ++i)
     {
       chain.Add(("input/inputfile_"+to_string(i)+".root").c_str());
     }
@@ -322,7 +322,7 @@ int analyze_segment_data(int iseg, int nseg)
 	}
     }
   h_event_all->Fill(0.5,chain.GetEntries());
-  TFile* outf = TFile::Open(("output/output_"+to_string(iseg)+"_"+to_string(iseg+nseg)+".root").c_str(),"RECREATE");
+  TFile* outf = TFile::Open(("output/output_"+to_string(iseg)+".root").c_str(),"RECREATE");
   outf->cd();
 
   h_recojet_pt_record_nocut_all->Write();

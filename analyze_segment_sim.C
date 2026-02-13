@@ -144,76 +144,95 @@ void filter_tjets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_
     }
 }
 int sw = 0;
-void match_meas_truth(std::vector<float>& meas_eta, std::vector<float>& meas_phi, std::vector<float>& meas_matched, std::vector<float>& truth_eta, std::vector<float>& truth_phi, std::vector<float>& truth_matched, float jet_radius, bool has_zvertex) {
-  meas_matched.assign(meas_eta.size(), -1);
+void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi, std::vector<float>& reco_matched, std::vector<float>& truth_eta, std::vector<float>& truth_phi, std::vector<float>& truth_matched, float jet_radius, bool has_zvertex)
+{
+  reco_matched.assign(reco_eta.size(), -1);
   truth_matched.assign(truth_eta.size(), -1);
   float max_match_dR = jet_radius * 0.75;
-  for (int im = 0; im < meas_eta.size(); ++im) {
-    float min_dR = 100;
-    int match_index = -9999;
-    for (int it = 0; it < truth_eta.size(); ++it) {
-      float dR;
-      if (has_zvertex) dR = get_dR(meas_eta[im], meas_phi[im], truth_eta[it], truth_phi[it]);
-      else dR = get_dR_ellipsoid(meas_eta[im], meas_phi[im], truth_eta[it], truth_phi[it]);
-      if (dR < min_dR) {
-        match_index = it;
-        min_dR = dR;
-      }
+  for (int im = 0; im < reco_eta.size(); ++im)
+    {
+      float min_dR = 100;
+      int match_index = -9999;
+      for (int it = 0; it < truth_eta.size(); ++it)
+	{
+	  float dR;
+	  if (has_zvertex) dR = get_dR(reco_eta[im], reco_phi[im], truth_eta[it], truth_phi[it]);
+	  else dR = get_dR_ellipsoid(reco_eta[im], reco_phi[im], truth_eta[it], truth_phi[it]);
+	  if (dR < min_dR)
+	    {
+	      match_index = it;
+	      min_dR = dR;
+	    }
+	}
+      if (min_dR < max_match_dR)
+	{
+	  if (truth_matched[match_index] == -1)
+	    {
+	      reco_matched[im] = match_index;
+	      truth_matched[match_index] = im;
+	    }
+	  else
+	    {
+	      float dR1;
+	      if (has_zvertex) dR1 = get_dR(reco_eta[truth_matched[match_index]], reco_phi[truth_matched[match_index]], truth_eta[match_index], truth_phi[match_index]);
+	      else dR1 = get_dR_ellipsoid(reco_eta[truth_matched[match_index]], reco_phi[truth_matched[match_index]], truth_eta[match_index], truth_phi[match_index]);
+	      if (min_dR < dR1)
+		{
+		  reco_matched[truth_matched[match_index]] = -1;
+		  reco_matched[im] = match_index;
+		  truth_matched[match_index] = im;
+		}
+	    }
+	}
     }
-    if (min_dR < max_match_dR) {
-      if (truth_matched[match_index] == -1) {
-        meas_matched[im] = match_index;
-        truth_matched[match_index] = im;
-      } else {
-        float dR1;
-        if (has_zvertex) dR1 = get_dR(meas_eta[truth_matched[match_index]], meas_phi[truth_matched[match_index]], truth_eta[match_index], truth_phi[match_index]);
-        else dR1 = get_dR_ellipsoid(meas_eta[truth_matched[match_index]], meas_phi[truth_matched[match_index]], truth_eta[match_index], truth_phi[match_index]);
-        if (min_dR < dR1) {
-          meas_matched[truth_matched[match_index]] = -1;
-          meas_matched[im] = match_index;
-          truth_matched[match_index] = im;
-        }
-      }
-    }
-  }
 }
 
-void fill_response_matrix(TH1D*& h_truth, TH1D*& h_meas, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_meas_unw, double scale, TF1* f_reweight, std::vector<float>& meas_pt, std::vector<float>& meas_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched) {
+void fill_response_matrix(TH1D*& h_truth, TH1D*& h_reco, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_reco_unw, double scale, TF1* f_reweight, std::vector<float>& reco_pt, std::vector<float>& reco_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched)
+{
   
-  for (int im = 0; im < meas_pt.size(); ++im) {
-    double reweight_factor = f_reweight->Eval(meas_pt[im]);
+  for (int im = 0; im < reco_pt.size(); ++im)
+    {
+      double reweight_factor = f_reweight->Eval(reco_pt[im]);
     
-    if (meas_matched[im] < 0) {
+      if (reco_matched[im] < 0)
+	{
       
-      h_meas->Fill(meas_pt[im], scale*reweight_factor);
-      h_fake->Fill(meas_pt[im], scale*reweight_factor);
-      // For reweighting
-      h_meas_unw->Fill(meas_pt[im], scale);
+	  h_reco->Fill(reco_pt[im], scale*reweight_factor);
+	  h_fake->Fill(reco_pt[im], scale*reweight_factor);
+	  // For reweighting
+	  h_reco_unw->Fill(reco_pt[im], scale);
       
-    } else {
+	}
+      else
+	{
       
-      h_meas->Fill(meas_pt[im], scale*reweight_factor);
-      h_resp->Fill(meas_pt[im], truth_pt[meas_matched[im]], scale*reweight_factor);
-      // For reweighting
-      h_meas_unw->Fill(meas_pt[im], scale);
-      h_matchtruth_unw->Fill(truth_pt[meas_matched[im]], scale);
-      h_matchtruth_rec->Fill(truth_pt[meas_matched[im]], scale*reweight_factor);
+	  h_reco->Fill(reco_pt[im], scale*reweight_factor);
+	  h_resp->Fill(reco_pt[im], truth_pt[reco_matched[im]], scale*reweight_factor);
+	  // For reweighting
+	  h_reco_unw->Fill(reco_pt[im], scale);
+	  h_matchtruth_unw->Fill(truth_pt[reco_matched[im]], scale);
+	  h_matchtruth_rec->Fill(truth_pt[reco_matched[im]], scale*reweight_factor);
       
+	}
     }
-  }
   
-  for (int it = 0; it < truth_pt.size(); ++it) {
+  for (int it = 0; it < truth_pt.size(); ++it)
+    {
     
-    if (truth_matched[it] < 0) {
-      h_truth->Fill(truth_pt[it], scale);
-      h_miss->Fill(truth_pt[it], scale);
-    } else {
-      h_truth->Fill(truth_pt[it], scale);
+      if (truth_matched[it] < 0)
+	{
+	  h_truth->Fill(truth_pt[it], scale);
+	  h_miss->Fill(truth_pt[it], scale);
+	}
+      else
+	{
+	  h_truth->Fill(truth_pt[it], scale);
+	}
     }
-  }
 }
 
-void build_hist(std::string tag, TH1D*& h_truth, TH1D*& h_measure, TH2D*& h_respmatrix, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchedtruth_weighted, TH1D*& h_matchedtruth_unweighted, TH1D*& h_measure_unweighted) {
+void build_hist(std::string tag, TH1D*& h_truth, TH1D*& h_measure, TH2D*& h_respmatrix, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchedtruth_weighted, TH1D*& h_matchedtruth_unweighted, TH1D*& h_measure_unweighted)
+{
   h_truth = new TH1D(Form("h_truth_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
   h_measure = new TH1D(Form("h_measure_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
   h_respmatrix = new TH2D(Form("h_respmatrix_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
@@ -264,63 +283,118 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 {
 
   double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000;
-  if (runtype == "mb") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 0; truthjet_pt_max = 5; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 0; truthjet_pt_max = 6; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
-    truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;
-  } else if (runtype == "jet5") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 5; truthjet_pt_max = 12; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
-    truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;
-  } else if (runtype == "jet10") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
-    truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;
-  } else if (runtype == "jet15") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
-    truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;
-  } else if (runtype == "jet20") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
-    truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;
-  } else if (runtype == "jet30") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
-    truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;
-  } else if (runtype == "jet50") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
-    truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;
-  } else if (runtype == "jet70") {
-    if (jet_rad == 0.2) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.3) {truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.4) {truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.5) {truthjet_pt_min = 75; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-    else if (jet_rad == 0.6) {truthjet_pt_min = 79; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-    truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;
-  }
+  if (runtype == "mb")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 0; truthjet_pt_max = 5; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 0; truthjet_pt_max = 6; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
+      truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;
+    }
+  else if (runtype == "jet5")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 5; truthjet_pt_max = 12; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
+      truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;
+    }
+  else if (runtype == "jet10")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
+      truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;
+    }
+  else if (runtype == "jet15")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
+      truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;
+    }
+  else if (runtype == "jet20")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
+      truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;
+    }
+  else if (runtype == "jet30")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
+      truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;
+    }
+  else if (runtype == "jet50")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
+      truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;
+    }
+  else if (runtype == "jet70")
+    {
+      if (jet_rad == 0.2)
+	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.3)
+	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.4)
+	{truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.5)
+	{truthjet_pt_min = 75; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+      else if (jet_rad == 0.6)
+	{truthjet_pt_min = 79; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+      truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;
+    }
 
   
   TChain chain("jet_tree");
@@ -369,15 +443,17 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 
 
   TFile *f_zvertexreweight = new TFile("input_zvertexreweight.root", "READ");
-  if (!f_zvertexreweight || f_zvertexreweight->IsZombie()) {
-    std::cout << "Error: cannot open input_zvertexreweight.root" << std::endl;
-    return -1;
-  }
+  if (!f_zvertexreweight || f_zvertexreweight->IsZombie())
+    {
+      std::cout << "Error: cannot open input_zvertexreweight.root" << std::endl;
+      return -1;
+    }
   TH1D *h_zvertex_reweight = (TH1D*)f_zvertexreweight->Get("h_zvertex_reweight");
-  if (!h_zvertex_reweight) {
-    std::cout << "Error: cannot open h_zvertex_reweight" << std::endl;
-    return -1;
-  }
+  if (!h_zvertex_reweight)
+    {
+      std::cout << "Error: cannot open h_zvertex_reweight" << std::endl;
+      return -1;
+    }
   
   TFile* fmb = TFile::Open("output_mbdefficiency.root","READ");
   TF1* mbt[3];
@@ -527,16 +603,22 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
     {
             
       chain.GetEntry(i);
-      z30 = abs(zvtx) < 30 && zvtx!=0;
-      z60 = abs(zvtx) < 60 && zvtx!=0;
+      
       bool has_zvtx = true;
       if(abs(zvtx)>990 || zvtx==0)
 	{
-	  zvtx = 0;
+	  zvtx = -999;
 	  has_zvtx = false;
 	}
+      z30 = abs(zvtx) < 30 && zvtx!=0;
+      z60 = abs(zvtx) < 60 && zvtx!=0;
       double scale_zvertexreweight = h_zvertex_reweight->GetBinContent(h_zvertex_reweight->GetXaxis()->FindBin(zvtx));
 
+      if(zvtx == -999)
+	{
+	  zvtx=0;
+	}
+      
       bgdj = false;
       bgnj = false;
 
@@ -633,185 +715,194 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       sw = 0;
       
       fill_response_matrix(h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all,
-                         h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all,
-                         scale_zvertexreweight, f_reweightfunc_all,
-                         calibjet_pt, calibjet_matched,
-                         goodtruthjet_pt, goodtruthjet_matched);
+			   h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all,
+			   scale_zvertexreweight, f_reweightfunc_all,
+			   calibjet_pt, calibjet_matched,
+			   goodtruthjet_pt, goodtruthjet_matched);
       
       
       
       fill_response_matrix(h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup,
-                         h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup,
-                         scale_zvertexreweight, f_reweightfunc_all_jetup,
-                         calibjet_pt, calibjet_matched,
-                         goodtruthjet_pt, goodtruthjet_matched);
+			   h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup,
+			   scale_zvertexreweight, f_reweightfunc_all_jetup,
+			   calibjet_pt, calibjet_matched,
+			   goodtruthjet_pt, goodtruthjet_matched);
       
       fill_response_matrix(h_truth_all_jetdown, h_measure_all_jetdown, h_respmatrix_all_jetdown, h_fake_all_jetdown, h_miss_all_jetdown,
-                         h_matchedtruth_weighted_all_jetdown, h_matchedtruth_unweighted_all_jetdown, h_measure_unweighted_all_jetdown,
-                         scale_zvertexreweight, f_reweightfunc_all_jetdown,
-                         calibjet_pt, calibjet_matched,
-                         goodtruthjet_pt, goodtruthjet_matched);
+			   h_matchedtruth_weighted_all_jetdown, h_matchedtruth_unweighted_all_jetdown, h_measure_unweighted_all_jetdown,
+			   scale_zvertexreweight, f_reweightfunc_all_jetdown,
+			   calibjet_pt, calibjet_matched,
+			   goodtruthjet_pt, goodtruthjet_matched);
     
-    if (z30) {
-      fill_response_matrix(h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30,
-                           h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex30_jetup, h_measure_zvertex30_jetup, h_respmatrix_zvertex30_jetup, h_fake_zvertex30_jetup, h_miss_zvertex30_jetup,
-                           h_matchedtruth_weighted_zvertex30_jetup, h_matchedtruth_unweighted_zvertex30_jetup, h_measure_unweighted_zvertex30_jetup,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jetup,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex30_jetdown, h_measure_zvertex30_jetdown, h_respmatrix_zvertex30_jetdown, h_fake_zvertex30_jetdown, h_miss_zvertex30_jetdown,
-                           h_matchedtruth_weighted_zvertex30_jetdown, h_matchedtruth_unweighted_zvertex30_jetdown, h_measure_unweighted_zvertex30_jetdown,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jetdown,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex30_mbdup, h_measure_zvertex30_mbdup, h_respmatrix_zvertex30_mbdup, h_fake_zvertex30_mbdup, h_miss_zvertex30_mbdup,
-                           h_matchedtruth_weighted_zvertex30_mbdup, h_matchedtruth_unweighted_zvertex30_mbdup, h_measure_unweighted_zvertex30_mbdup,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_mbdup,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex30_mbddown, h_measure_zvertex30_mbddown, h_respmatrix_zvertex30_mbddown, h_fake_zvertex30_mbddown, h_miss_zvertex30_mbddown,
-                           h_matchedtruth_weighted_zvertex30_mbddown, h_matchedtruth_unweighted_zvertex30_mbddown, h_measure_unweighted_zvertex30_mbddown,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_mbddown,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-    }
-    if (z60) {
+      if (z30)
+	{
+	  fill_response_matrix(h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30,
+			       h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex30_jetup, h_measure_zvertex30_jetup, h_respmatrix_zvertex30_jetup, h_fake_zvertex30_jetup, h_miss_zvertex30_jetup,
+			       h_matchedtruth_weighted_zvertex30_jetup, h_matchedtruth_unweighted_zvertex30_jetup, h_measure_unweighted_zvertex30_jetup,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jetup,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex30_jetdown, h_measure_zvertex30_jetdown, h_respmatrix_zvertex30_jetdown, h_fake_zvertex30_jetdown, h_miss_zvertex30_jetdown,
+			       h_matchedtruth_weighted_zvertex30_jetdown, h_matchedtruth_unweighted_zvertex30_jetdown, h_measure_unweighted_zvertex30_jetdown,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jetdown,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex30_mbdup, h_measure_zvertex30_mbdup, h_respmatrix_zvertex30_mbdup, h_fake_zvertex30_mbdup, h_miss_zvertex30_mbdup,
+			       h_matchedtruth_weighted_zvertex30_mbdup, h_matchedtruth_unweighted_zvertex30_mbdup, h_measure_unweighted_zvertex30_mbdup,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_mbdup,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex30_mbddown, h_measure_zvertex30_mbddown, h_respmatrix_zvertex30_mbddown, h_fake_zvertex30_mbddown, h_miss_zvertex30_mbddown,
+			       h_matchedtruth_weighted_zvertex30_mbddown, h_matchedtruth_unweighted_zvertex30_mbddown, h_measure_unweighted_zvertex30_mbddown,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_mbddown,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	}
+      if (z60)
+	{
 
 
-      fill_response_matrix(h_truth_zvertex60, h_measure_zvertex60, h_respmatrix_zvertex60, h_fake_zvertex60, h_miss_zvertex60,
-                           h_matchedtruth_weighted_zvertex60, h_matchedtruth_unweighted_zvertex60, h_measure_unweighted_zvertex60,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex60_jetup, h_measure_zvertex60_jetup, h_respmatrix_zvertex60_jetup, h_fake_zvertex60_jetup, h_miss_zvertex60_jetup,
-                           h_matchedtruth_weighted_zvertex60_jetup, h_matchedtruth_unweighted_zvertex60_jetup, h_measure_unweighted_zvertex60_jetup,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jetup,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex60_jetdown, h_measure_zvertex60_jetdown, h_respmatrix_zvertex60_jetdown, h_fake_zvertex60_jetdown, h_miss_zvertex60_jetdown,
-                           h_matchedtruth_weighted_zvertex60_jetdown, h_matchedtruth_unweighted_zvertex60_jetdown, h_measure_unweighted_zvertex60_jetdown,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jetdown,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex60_mbdup, h_measure_zvertex60_mbdup, h_respmatrix_zvertex60_mbdup, h_fake_zvertex60_mbdup, h_miss_zvertex60_mbdup,
-                           h_matchedtruth_weighted_zvertex60_mbdup, h_matchedtruth_unweighted_zvertex60_mbdup, h_measure_unweighted_zvertex60_mbdup,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_mbdup,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-      fill_response_matrix(h_truth_zvertex60_mbddown, h_measure_zvertex60_mbddown, h_respmatrix_zvertex60_mbddown, h_fake_zvertex60_mbddown, h_miss_zvertex60_mbddown,
-                           h_matchedtruth_weighted_zvertex60_mbddown, h_matchedtruth_unweighted_zvertex60_mbddown, h_measure_unweighted_zvertex60_mbddown,
-                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_mbddown,
-                           calibjet_pt, calibjet_matched,
-                           goodtruthjet_pt, goodtruthjet_matched);
-    }
-    if (z60) {
-      for (int im = 0; im < calibjet_pt.size(); ++im) {
-        h_fullclosure_measure_zvertex60->Fill(calibjet_pt[im]);
-        if ((i/5) % 2 == 0) h_halfclosure_measure_zvertex60->Fill(calibjet_pt[im]);
-        else h_halfclosure_inputmeasure_zvertex60->Fill(calibjet_pt[im]);
-        if (calibjet_matched[im] < 0) {
-          h_fullclosure_fake_zvertex60->Fill(calibjet_pt[im]);
-          if ((i/5) % 2 == 0) h_halfclosure_fake_zvertex60->Fill(calibjet_pt[im]);
-        } else {
-          h_fullclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
-          if ((i/5) % 2 == 0) h_halfclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
-        }
-      }
-      for (int it = 0; it < goodtruthjet_pt.size(); ++it) {
-        h_fullclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
-        if ((i/5) % 2 == 0) h_halfclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
-        if (goodtruthjet_matched[it] < 0) {
-          h_fullclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
-          if ((i/5) % 2 == 0) h_halfclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
-        }
-      }
-    }
+	  fill_response_matrix(h_truth_zvertex60, h_measure_zvertex60, h_respmatrix_zvertex60, h_fake_zvertex60, h_miss_zvertex60,
+			       h_matchedtruth_weighted_zvertex60, h_matchedtruth_unweighted_zvertex60, h_measure_unweighted_zvertex60,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex60_jetup, h_measure_zvertex60_jetup, h_respmatrix_zvertex60_jetup, h_fake_zvertex60_jetup, h_miss_zvertex60_jetup,
+			       h_matchedtruth_weighted_zvertex60_jetup, h_matchedtruth_unweighted_zvertex60_jetup, h_measure_unweighted_zvertex60_jetup,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jetup,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex60_jetdown, h_measure_zvertex60_jetdown, h_respmatrix_zvertex60_jetdown, h_fake_zvertex60_jetdown, h_miss_zvertex60_jetdown,
+			       h_matchedtruth_weighted_zvertex60_jetdown, h_matchedtruth_unweighted_zvertex60_jetdown, h_measure_unweighted_zvertex60_jetdown,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jetdown,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex60_mbdup, h_measure_zvertex60_mbdup, h_respmatrix_zvertex60_mbdup, h_fake_zvertex60_mbdup, h_miss_zvertex60_mbdup,
+			       h_matchedtruth_weighted_zvertex60_mbdup, h_matchedtruth_unweighted_zvertex60_mbdup, h_measure_unweighted_zvertex60_mbdup,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_mbdup,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	  fill_response_matrix(h_truth_zvertex60_mbddown, h_measure_zvertex60_mbddown, h_respmatrix_zvertex60_mbddown, h_fake_zvertex60_mbddown, h_miss_zvertex60_mbddown,
+			       h_matchedtruth_weighted_zvertex60_mbddown, h_matchedtruth_unweighted_zvertex60_mbddown, h_measure_unweighted_zvertex60_mbddown,
+			       scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_mbddown,
+			       calibjet_pt, calibjet_matched,
+			       goodtruthjet_pt, goodtruthjet_matched);
+	}
+      if (z60)
+	{
+	  for (int im = 0; im < calibjet_pt.size(); ++im)
+	    {
+	      h_fullclosure_measure_zvertex60->Fill(calibjet_pt[im]);
+	      if ((i/5) % 2 == 0) h_halfclosure_measure_zvertex60->Fill(calibjet_pt[im]);
+	      else h_halfclosure_inputmeasure_zvertex60->Fill(calibjet_pt[im]);
+	      if (calibjet_matched[im] < 0)
+		{
+		  h_fullclosure_fake_zvertex60->Fill(calibjet_pt[im]);
+		  if ((i/5) % 2 == 0) h_halfclosure_fake_zvertex60->Fill(calibjet_pt[im]);
+		}
+	      else
+		{
+		  h_fullclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
+		  if ((i/5) % 2 == 0) h_halfclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
+		}
+	    }
+	  for (int it = 0; it < goodtruthjet_pt.size(); ++it)
+	    {
+	      h_fullclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
+	      if ((i/5) % 2 == 0) h_halfclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
+	      if (goodtruthjet_matched[it] < 0)
+		{
+		  h_fullclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
+		  if ((i/5) % 2 == 0) h_halfclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
+		}
+	    }
+	}
 
-    match_meas_truth(calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
-    fill_response_matrix(h_truth_all_jesup, h_measure_all_jesup, h_respmatrix_all_jesup, h_fake_all_jesup, h_miss_all_jesup,
-                         h_matchedtruth_weighted_all_jesup, h_matchedtruth_unweighted_all_jesup, h_measure_unweighted_all_jesup,
-                         scale_zvertexreweight, f_reweightfunc_all_jesup,
-                         calibjet_pt_jesup, calibjet_matched_jesup,
-                         goodtruthjet_pt, goodtruthjet_matched);
-    if (z30) fill_response_matrix(h_truth_zvertex30_jesup, h_measure_zvertex30_jesup, h_respmatrix_zvertex30_jesup, h_fake_zvertex30_jesup, h_miss_zvertex30_jesup,
-                                           h_matchedtruth_weighted_zvertex30_jesup, h_matchedtruth_unweighted_zvertex30_jesup, h_measure_unweighted_zvertex30_jesup,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jesup,
-                                           calibjet_pt_jesup, calibjet_matched_jesup,
-                                           goodtruthjet_pt, goodtruthjet_matched);
-    if (z60) fill_response_matrix(h_truth_zvertex60_jesup, h_measure_zvertex60_jesup, h_respmatrix_zvertex60_jesup, h_fake_zvertex60_jesup, h_miss_zvertex60_jesup,
-                                           h_matchedtruth_weighted_zvertex60_jesup, h_matchedtruth_unweighted_zvertex60_jesup, h_measure_unweighted_zvertex60_jesup,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jesup,
-                                           calibjet_pt_jesup, calibjet_matched_jesup,
-                                           goodtruthjet_pt, goodtruthjet_matched);
+      match_meas_truth(calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      fill_response_matrix(h_truth_all_jesup, h_measure_all_jesup, h_respmatrix_all_jesup, h_fake_all_jesup, h_miss_all_jesup,
+			   h_matchedtruth_weighted_all_jesup, h_matchedtruth_unweighted_all_jesup, h_measure_unweighted_all_jesup,
+			   scale_zvertexreweight, f_reweightfunc_all_jesup,
+			   calibjet_pt_jesup, calibjet_matched_jesup,
+			   goodtruthjet_pt, goodtruthjet_matched);
+      if (z30) fill_response_matrix(h_truth_zvertex30_jesup, h_measure_zvertex30_jesup, h_respmatrix_zvertex30_jesup, h_fake_zvertex30_jesup, h_miss_zvertex30_jesup,
+				    h_matchedtruth_weighted_zvertex30_jesup, h_matchedtruth_unweighted_zvertex30_jesup, h_measure_unweighted_zvertex30_jesup,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jesup,
+				    calibjet_pt_jesup, calibjet_matched_jesup,
+				    goodtruthjet_pt, goodtruthjet_matched);
+      if (z60) fill_response_matrix(h_truth_zvertex60_jesup, h_measure_zvertex60_jesup, h_respmatrix_zvertex60_jesup, h_fake_zvertex60_jesup, h_miss_zvertex60_jesup,
+				    h_matchedtruth_weighted_zvertex60_jesup, h_matchedtruth_unweighted_zvertex60_jesup, h_measure_unweighted_zvertex60_jesup,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jesup,
+				    calibjet_pt_jesup, calibjet_matched_jesup,
+				    goodtruthjet_pt, goodtruthjet_matched);
                                            
-    match_meas_truth(calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
-    fill_response_matrix(h_truth_all_jesdown, h_measure_all_jesdown, h_respmatrix_all_jesdown, h_fake_all_jesdown, h_miss_all_jesdown,
-                         h_matchedtruth_weighted_all_jesdown, h_matchedtruth_unweighted_all_jesdown, h_measure_unweighted_all_jesdown,
-                         scale_zvertexreweight, f_reweightfunc_all_jesdown,
-                         calibjet_pt_jesdown, calibjet_matched_jesdown,
-                         goodtruthjet_pt, goodtruthjet_matched);
-    if (z30) fill_response_matrix(h_truth_zvertex30_jesdown, h_measure_zvertex30_jesdown, h_respmatrix_zvertex30_jesdown, h_fake_zvertex30_jesdown, h_miss_zvertex30_jesdown,
-                                           h_matchedtruth_weighted_zvertex30_jesdown, h_matchedtruth_unweighted_zvertex30_jesdown, h_measure_unweighted_zvertex30_jesdown,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jesdown,
-                                           calibjet_pt_jesdown, calibjet_matched_jesdown,
-                                           goodtruthjet_pt, goodtruthjet_matched);
-    if (z60) fill_response_matrix(h_truth_zvertex60_jesdown, h_measure_zvertex60_jesdown, h_respmatrix_zvertex60_jesdown, h_fake_zvertex60_jesdown, h_miss_zvertex60_jesdown,
-                                           h_matchedtruth_weighted_zvertex60_jesdown, h_matchedtruth_unweighted_zvertex60_jesdown, h_measure_unweighted_zvertex60_jesdown,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jesdown,
-                                           calibjet_pt_jesdown, calibjet_matched_jesdown,
-                                           goodtruthjet_pt, goodtruthjet_matched);
+      match_meas_truth(calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      fill_response_matrix(h_truth_all_jesdown, h_measure_all_jesdown, h_respmatrix_all_jesdown, h_fake_all_jesdown, h_miss_all_jesdown,
+			   h_matchedtruth_weighted_all_jesdown, h_matchedtruth_unweighted_all_jesdown, h_measure_unweighted_all_jesdown,
+			   scale_zvertexreweight, f_reweightfunc_all_jesdown,
+			   calibjet_pt_jesdown, calibjet_matched_jesdown,
+			   goodtruthjet_pt, goodtruthjet_matched);
+      if (z30) fill_response_matrix(h_truth_zvertex30_jesdown, h_measure_zvertex30_jesdown, h_respmatrix_zvertex30_jesdown, h_fake_zvertex30_jesdown, h_miss_zvertex30_jesdown,
+				    h_matchedtruth_weighted_zvertex30_jesdown, h_matchedtruth_unweighted_zvertex30_jesdown, h_measure_unweighted_zvertex30_jesdown,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jesdown,
+				    calibjet_pt_jesdown, calibjet_matched_jesdown,
+				    goodtruthjet_pt, goodtruthjet_matched);
+      if (z60) fill_response_matrix(h_truth_zvertex60_jesdown, h_measure_zvertex60_jesdown, h_respmatrix_zvertex60_jesdown, h_fake_zvertex60_jesdown, h_miss_zvertex60_jesdown,
+				    h_matchedtruth_weighted_zvertex60_jesdown, h_matchedtruth_unweighted_zvertex60_jesdown, h_measure_unweighted_zvertex60_jesdown,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jesdown,
+				    calibjet_pt_jesdown, calibjet_matched_jesdown,
+				    goodtruthjet_pt, goodtruthjet_matched);
 
-    match_meas_truth(calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
-    fill_response_matrix(h_truth_all_jerup, h_measure_all_jerup, h_respmatrix_all_jerup, h_fake_all_jerup, h_miss_all_jerup,
-                         h_matchedtruth_weighted_all_jerup, h_matchedtruth_unweighted_all_jerup, h_measure_unweighted_all_jerup,
-                         scale_zvertexreweight, f_reweightfunc_all_jerup,
-                         calibjet_pt_jerup, calibjet_matched_jerup,
-                         goodtruthjet_pt, goodtruthjet_matched);
-    if (z30) fill_response_matrix(h_truth_zvertex30_jerup, h_measure_zvertex30_jerup, h_respmatrix_zvertex30_jerup, h_fake_zvertex30_jerup, h_miss_zvertex30_jerup,
-                                           h_matchedtruth_weighted_zvertex30_jerup, h_matchedtruth_unweighted_zvertex30_jerup, h_measure_unweighted_zvertex30_jerup,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jerup,
-                                           calibjet_pt_jerup, calibjet_matched_jerup,
-                                           goodtruthjet_pt, goodtruthjet_matched);
-    if (z60) fill_response_matrix(h_truth_zvertex60_jerup, h_measure_zvertex60_jerup, h_respmatrix_zvertex60_jerup, h_fake_zvertex60_jerup, h_miss_zvertex60_jerup,
-                                           h_matchedtruth_weighted_zvertex60_jerup, h_matchedtruth_unweighted_zvertex60_jerup, h_measure_unweighted_zvertex60_jerup,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerup,
-                                           calibjet_pt_jerup, calibjet_matched_jerup,
-                                           goodtruthjet_pt, goodtruthjet_matched);
+      match_meas_truth(calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      fill_response_matrix(h_truth_all_jerup, h_measure_all_jerup, h_respmatrix_all_jerup, h_fake_all_jerup, h_miss_all_jerup,
+			   h_matchedtruth_weighted_all_jerup, h_matchedtruth_unweighted_all_jerup, h_measure_unweighted_all_jerup,
+			   scale_zvertexreweight, f_reweightfunc_all_jerup,
+			   calibjet_pt_jerup, calibjet_matched_jerup,
+			   goodtruthjet_pt, goodtruthjet_matched);
+      if (z30) fill_response_matrix(h_truth_zvertex30_jerup, h_measure_zvertex30_jerup, h_respmatrix_zvertex30_jerup, h_fake_zvertex30_jerup, h_miss_zvertex30_jerup,
+				    h_matchedtruth_weighted_zvertex30_jerup, h_matchedtruth_unweighted_zvertex30_jerup, h_measure_unweighted_zvertex30_jerup,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jerup,
+				    calibjet_pt_jerup, calibjet_matched_jerup,
+				    goodtruthjet_pt, goodtruthjet_matched);
+      if (z60) fill_response_matrix(h_truth_zvertex60_jerup, h_measure_zvertex60_jerup, h_respmatrix_zvertex60_jerup, h_fake_zvertex60_jerup, h_miss_zvertex60_jerup,
+				    h_matchedtruth_weighted_zvertex60_jerup, h_matchedtruth_unweighted_zvertex60_jerup, h_measure_unweighted_zvertex60_jerup,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerup,
+				    calibjet_pt_jerup, calibjet_matched_jerup,
+				    goodtruthjet_pt, goodtruthjet_matched);
 
-    match_meas_truth(calibjet_eta_jerdown, calibjet_phi_jerdown, calibjet_matched_jerdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
-    fill_response_matrix(h_truth_all_jerdown, h_measure_all_jerdown, h_respmatrix_all_jerdown, h_fake_all_jerdown, h_miss_all_jerdown,
-                         h_matchedtruth_weighted_all_jerdown, h_matchedtruth_unweighted_all_jerdown, h_measure_unweighted_all_jerdown,
-                         scale_zvertexreweight, f_reweightfunc_all_jerdown,
-                         calibjet_pt_jerdown, calibjet_matched_jerdown,
-                         goodtruthjet_pt, goodtruthjet_matched);
-    if (z30) fill_response_matrix(h_truth_zvertex30_jerdown, h_measure_zvertex30_jerdown, h_respmatrix_zvertex30_jerdown, h_fake_zvertex30_jerdown, h_miss_zvertex30_jerdown,
-                                           h_matchedtruth_weighted_zvertex30_jerdown, h_matchedtruth_unweighted_zvertex30_jerdown, h_measure_unweighted_zvertex30_jerdown,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jerdown,
-                                           calibjet_pt_jerdown, calibjet_matched_jerdown,
-                                           goodtruthjet_pt, goodtruthjet_matched);
-    if (z60) fill_response_matrix(h_truth_zvertex60_jerdown, h_measure_zvertex60_jerdown, h_respmatrix_zvertex60_jerdown, h_fake_zvertex60_jerdown, h_miss_zvertex60_jerdown,
-                                           h_matchedtruth_weighted_zvertex60_jerdown, h_matchedtruth_unweighted_zvertex60_jerdown, h_measure_unweighted_zvertex60_jerdown,
-                                           scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerdown,
-                                           calibjet_pt_jerdown, calibjet_matched_jerdown,
-                                           goodtruthjet_pt, goodtruthjet_matched);
-    match_meas_truth(calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
-    fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
-                         h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
-                         scale_zvertexreweight, f_reweightfunc_all,
-                         calibjet_pt_nosmear, calibjet_matched_nosmear,
-                         goodtruthjet_pt, goodtruthjet_matched);
-    if(z60)       fill_response_matrix(h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear,
-			   h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear,
-			   scale_zvertexreweight, f_reweightfunc_zvertex60,
+      match_meas_truth(calibjet_eta_jerdown, calibjet_phi_jerdown, calibjet_matched_jerdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      fill_response_matrix(h_truth_all_jerdown, h_measure_all_jerdown, h_respmatrix_all_jerdown, h_fake_all_jerdown, h_miss_all_jerdown,
+			   h_matchedtruth_weighted_all_jerdown, h_matchedtruth_unweighted_all_jerdown, h_measure_unweighted_all_jerdown,
+			   scale_zvertexreweight, f_reweightfunc_all_jerdown,
+			   calibjet_pt_jerdown, calibjet_matched_jerdown,
+			   goodtruthjet_pt, goodtruthjet_matched);
+      if (z30) fill_response_matrix(h_truth_zvertex30_jerdown, h_measure_zvertex30_jerdown, h_respmatrix_zvertex30_jerdown, h_fake_zvertex30_jerdown, h_miss_zvertex30_jerdown,
+				    h_matchedtruth_weighted_zvertex30_jerdown, h_matchedtruth_unweighted_zvertex30_jerdown, h_measure_unweighted_zvertex30_jerdown,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex30_jerdown,
+				    calibjet_pt_jerdown, calibjet_matched_jerdown,
+				    goodtruthjet_pt, goodtruthjet_matched);
+      if (z60) fill_response_matrix(h_truth_zvertex60_jerdown, h_measure_zvertex60_jerdown, h_respmatrix_zvertex60_jerdown, h_fake_zvertex60_jerdown, h_miss_zvertex60_jerdown,
+				    h_matchedtruth_weighted_zvertex60_jerdown, h_matchedtruth_unweighted_zvertex60_jerdown, h_measure_unweighted_zvertex60_jerdown,
+				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerdown,
+				    calibjet_pt_jerdown, calibjet_matched_jerdown,
+				    goodtruthjet_pt, goodtruthjet_matched);
+      match_meas_truth(calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
+			   h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
+			   scale_zvertexreweight, f_reweightfunc_all,
 			   calibjet_pt_nosmear, calibjet_matched_nosmear,
 			   goodtruthjet_pt, goodtruthjet_matched);
+      if(z60)       fill_response_matrix(h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear,
+					 h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear,
+					 scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60,
+					 calibjet_pt_nosmear, calibjet_matched_nosmear,
+					 goodtruthjet_pt, goodtruthjet_matched);
 
 
-  } // event loop end
+    } // event loop end
   // Fill event histograms.
   h_event_all->Fill(0.5, chain.GetEntries());
 
@@ -834,7 +925,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   h_truth_all_nosmear->Write(); h_measure_all_nosmear->Write(); h_respmatrix_all_nosmear->Write(); h_fake_all_nosmear->Write(); h_miss_all_nosmear->Write(); h_matchedtruth_weighted_all_nosmear->Write(); h_matchedtruth_unweighted_all_nosmear->Write(); h_measure_unweighted_all_nosmear->Write();
 
 
-    h_truth_zvertex60_nosmear->Write(); h_measure_zvertex60_nosmear->Write(); h_respmatrix_zvertex60_nosmear->Write(); h_fake_zvertex60_nosmear->Write(); h_miss_zvertex60_nosmear->Write(); h_matchedtruth_weighted_zvertex60_nosmear->Write(); h_matchedtruth_unweighted_zvertex60_nosmear->Write(); h_measure_unweighted_zvertex60_nosmear->Write();
+  h_truth_zvertex60_nosmear->Write(); h_measure_zvertex60_nosmear->Write(); h_respmatrix_zvertex60_nosmear->Write(); h_fake_zvertex60_nosmear->Write(); h_miss_zvertex60_nosmear->Write(); h_matchedtruth_weighted_zvertex60_nosmear->Write(); h_matchedtruth_unweighted_zvertex60_nosmear->Write(); h_measure_unweighted_zvertex60_nosmear->Write();
 
   
   h_truth_zvertex30->Write(); h_measure_zvertex30->Write(); h_respmatrix_zvertex30->Write(); h_fake_zvertex30->Write(); h_miss_zvertex30->Write(); h_matchedtruth_weighted_zvertex30->Write(); h_matchedtruth_unweighted_zvertex30->Write(); h_measure_unweighted_zvertex30->Write();

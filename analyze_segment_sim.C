@@ -224,6 +224,8 @@ void build_hist(std::string tag, TH1D*& h_truth, TH1D*& h_measure, TH2D*& h_resp
   h_measure_unweighted = new TH1D(Form("h_measure_unweighted_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", 1000, 0, 100);
 }
 
+
+bool isbg;
 void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, int jet_n, float* jet_pt, float* jet_eta, float* jet_phi, float jes, float jer)
 {
   calibjet_pt.clear();
@@ -232,7 +234,7 @@ void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_
 
   for(int i=0; i<jet_n; ++i)
     {
-      if(jet_filter.at(i)) continue;
+      if(jet_filter.at(i) || isbg) continue;
       double calib_pt;
       if(jer != 0) calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
       else calib_pt = jet_pt[i];
@@ -528,7 +530,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       z30 = abs(zvtx) < 30 && zvtx!=0;
       z60 = abs(zvtx) < 60 && zvtx!=0;
       bool has_zvtx = true;
-      if(abs(zvtx)>990)
+      if(abs(zvtx)>990 || zvtx==0)
 	{
 	  zvtx = 0;
 	  has_zvtx = false;
@@ -613,17 +615,18 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 	    }
 	}
       
-      if(bgnj || bgdj) continue;
+      if(bgnj || bgdj) isbg = true;
+      else isbg = false;
       h_event_passed->Fill(0.5);
       get_truthjet(goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, tjet_filter, tjet_n, tjet_pt, tjet_eta, tjet_phi);
-      get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.1);
+      get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.1);
 
-      get_calibjet(calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0);
+      get_calibjet(calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0);
       
-      get_calibjet(calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1.06, 0.1);
-      get_calibjet(calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 0.94, 0.1);
-      get_calibjet(calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.15);
-      get_calibjet(calibjet_pt_jerdown, calibjet_eta_jerdown, calibjet_phi_jerdown, jet_filter, jet_n, jet_pt, jet_eta, jet_phi, 1, 0.05);
+      get_calibjet(calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1.06, 0.1);
+      get_calibjet(calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 0.94, 0.1);
+      get_calibjet(calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.15);
+      get_calibjet(calibjet_pt_jerdown, calibjet_eta_jerdown, calibjet_phi_jerdown, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.05);
       
       sw = 1;
       match_meas_truth(calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);

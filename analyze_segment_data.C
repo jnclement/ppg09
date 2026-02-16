@@ -126,10 +126,10 @@ void filter_jets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_e
     }
 }
 
-int analyze_segment_data(int iseg, int nseg)
+int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 {
   TChain chain("jet_tree");
-  
+  jet_rad = 0.1*jet_radius_index;
   for(int i=0; i<nseg; ++i)
     {
       chain.Add(("input/inputfile_"+to_string(i)+".root").c_str());
@@ -147,29 +147,46 @@ int analyze_segment_data(int iseg, int nseg)
   int jet_n;
   int calib_jet_n;
 
-  chain.SetBranchAddress("zvtx",&zvtx);
-  chain.SetBranchAddress("triggervec",&trigvec);
-  chain.SetBranchAddress("jet_et",jet_e);
-  chain.SetBranchAddress("jet_pt",jet_pt);
-  chain.SetBranchAddress("jet_etrans",jet_et);
-  chain.SetBranchAddress("jet_eta",jet_eta);
-  chain.SetBranchAddress("jet_phi",jet_phi);
-  chain.SetBranchAddress("jet_t",jet_t);
-  chain.SetBranchAddress("jet_pt_calib",jet_pt_calib);
-  chain.SetBranchAddress("jet_n",&jet_n);
-  chain.SetBranchAddress("calib_jet_n",&calib_jet_n);
+  if(jet_radius_index == 4)
+    {
+      chain.SetBranchAddress("zvtx",&zvtx);
+      chain.SetBranchAddress("triggervec",&trigvec);
+      chain.SetBranchAddress("jet_et",jet_e);
+      chain.SetBranchAddress("jet_pt",jet_pt);
+      chain.SetBranchAddress("jet_etrans",jet_et);
+      chain.SetBranchAddress("jet_eta",jet_eta);
+      chain.SetBranchAddress("jet_phi",jet_phi);
+      chain.SetBranchAddress("jet_t",jet_t);
+      chain.SetBranchAddress("jet_pt_calib",jet_pt_calib);
+      chain.SetBranchAddress("jet_n",&jet_n);
+      chain.SetBranchAddress("calib_jet_n",&calib_jet_n);
+    }
+  else
+    {
+      chain.SetBranchAddress("zvtx",&zvtx);
+      chain.SetBranchAddress("triggervec",&trigvec);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_et").c_str(),jet_e);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_pt").c_str(),jet_pt);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_etrans").c_str(),jet_et);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_eta").c_str(),jet_eta);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_phi").c_str(),jet_phi);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_t").c_str(),jet_t);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_pt_calib").c_str(),jet_pt_calib);
+      chain.SetBranchAddress(("r0"+to_string(jet_radius_index)+"_jet_n").c_str(),&jet_n);
+      chain.SetBranchAddress(("calib_r0"+to_string(jet_radius_index)+"_jet_n").c_str(),&calib_jet_n);
+    }
 
   TFile* fjt = TFile::Open("output_jetefficiency.root","READ");
   TF1* jt[3];
-  jt[0] = (TF1*)fjt->Get("jettrig_04_pt_nominal");
-  jt[1] = (TF1*)fjt->Get("jettrig_04_pt_up");
-  jt[2] = (TF1*)fjt->Get("jettrig_04_pt_down");
+  jt[0] = (TF1*)fjt->Get(("jettrig_0"+to_string(jet_radius_index)+"_pt_nominal").c_str());
+  jt[1] = (TF1*)fjt->Get(("jettrig_0"+to_string(jet_radius_index)+"_pt_up").c_str());
+  jt[2] = (TF1*)fjt->Get(("jettrig_0"+to_string(jet_radius_index)+"_pt_down").c_str());
 
   TFile* fmb = TFile::Open("output_mbdefficiency.root","READ");
   TF1* mbt[3];
-  mbt[0] = (TF1*)fmb->Get("mbdtrig04_nominal");
-  mbt[1] = (TF1*)fmb->Get("mbdtrig04_up");
-  mbt[2] = (TF1*)fmb->Get("mbdtrig04_down");
+  mbt[0] = (TF1*)fmb->Get(("mbdtrig0"+to_string(jet_radius_index)+"_nominal").c_str());
+  mbt[1] = (TF1*)fmb->Get(("mbdtrig0"+to_string(jet_radius_index)+"_up").c_str());
+  mbt[2] = (TF1*)fmb->Get(("mbdtrig0"+to_string(jet_radius_index)+"_down").c_str());
 
   TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
   TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
@@ -181,6 +198,8 @@ int analyze_segment_data(int iseg, int nseg)
   TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+
+  TH1D *h_calibjet_pt_record_all = new TH1D("h_calibjet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
 
   TH1D *h_calibjet_pt_all = new TH1D("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins);
   TH1D *h_calibjet_pt_all_jetup = new TH1D("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
@@ -287,6 +306,7 @@ int analyze_segment_data(int iseg, int nseg)
 	{
 	  if(jet_filter.at(j)) continue;
 	  h_calibjet_pt_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
+	  h_calibjet_pt_record_all->Fill(jet_pt_calib[j]);
           h_calibjet_pt_all_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/maxeff);
           h_calibjet_pt_all_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/maxeff);
           h_calibjet_pt_record_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
@@ -322,11 +342,14 @@ int analyze_segment_data(int iseg, int nseg)
 	}
     }
   h_event_all->Fill(0.5,chain.GetEntries());
-  TFile* outf = TFile::Open(("output/output_"+to_string(iseg)+".root").c_str(),"RECREATE");
+  TFile* outf = TFile::Open(("output/output_"+to_string(iseg)+"_r0"+to_string(jet_radius_index)+".root").c_str(),"RECREATE");
   outf->cd();
 
   h_recojet_pt_record_nocut_all->Write();
   h_recojet_pt_record_all->Write();
+
+  h_calibjet_pt_record_all->Write();
+    
   h_recojet_pt_record_nocut_zvertex30->Write();
   h_recojet_pt_record_zvertex30->Write();
   h_recojet_pt_record_nocut_zvertex60->Write();

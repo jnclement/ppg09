@@ -199,7 +199,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
 
-  TH1D *h_calibjet_pt_record_all = new TH1D("h_calibjet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_all_noweight = new TH1D("h_calibjet_pt_record_all_noweight", ";p_{T} [GeV]", 1000, 0, 100);
 
   TH1D *h_calibjet_pt_all = new TH1D("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins);
   TH1D *h_calibjet_pt_all_jetup = new TH1D("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
@@ -306,7 +306,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 	{
 	  if(jet_filter.at(j)) continue;
 	  h_calibjet_pt_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
-	  h_calibjet_pt_record_all->Fill(jet_pt_calib[j]);
+	  h_calibjet_pt_record_all_noweight->Fill(jet_pt_calib[j]);
           h_calibjet_pt_all_jetup->Fill(jet_pt_calib[j], 1.0/jeff[1]*1.0/maxeff);
           h_calibjet_pt_all_jetdown->Fill(jet_pt_calib[j], 1.0/jeff[2]*1.0/maxeff);
           h_calibjet_pt_record_all->Fill(jet_pt_calib[j], 1.0/jeff[0]*1.0/maxeff);
@@ -348,7 +348,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   h_recojet_pt_record_nocut_all->Write();
   h_recojet_pt_record_all->Write();
 
-  h_calibjet_pt_record_all->Write();
+  h_calibjet_pt_record_all_noweight->Write();
     
   h_recojet_pt_record_nocut_zvertex30->Write();
   h_recojet_pt_record_zvertex30->Write();

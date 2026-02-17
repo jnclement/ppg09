@@ -1,11 +1,12 @@
 #!/bin/bash
 
-if [ $# -lt 2 ]; then
-    echo "need TAG and ISDAT args (tag should be data if data, and jetxx otherwise)"
+if [ $# -lt 3 ]; then
+    echo "need TAG, ISDAT, RADIUS args (tag should be data if data, and jetxx otherwise)"
     exit 1
 fi
 TAG=$1
 ISDAT=$2
+RAD=$3
 TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 29))
 TOSUB=$(( $TOSUB / 30 ))
 BASENAME="condor_${TAG}"
@@ -19,7 +20,7 @@ if [[ $ISDAT -ne 0 ]]; then
 fi
 #TOSUB=1
 echo "executable = ${EXE}" > $PREFIX/$SUBNAME
-echo "arguments = \$(Process) ${TAG}" >> $PREFIX/$SUBNAME
+echo "arguments = \$(Process) ${TAG} ${RAD}" >> $PREFIX/$SUBNAME
 echo "output = output/out/output_${BASENAME}_\$(Process).out" >> $PREFIX/$SUBNAME
 echo "request_memory                = 4GB" >> $PREFIX/$SUBNAME
 echo "error = output/out/output_${BASENAME}_\$(Process).out" >> $PREFIX/$SUBNAME

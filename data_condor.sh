@@ -30,6 +30,6 @@ done
 
 mkdir output
 
-root -l -b -q "analyze_segment_data.C($N,$NSEG)"
+root -l -b -q "analyze_segment_data.C($N,$NSEG,${3})"
 mkdir /sphenix/user/jocl/projects/ppg09/ana_output/dat -p
-cp output/* /sphenix/user/jocl/projects/ppg09/ana_output/dat
+cp output/* /sphenix/user/jocl/projects/ppg09/ana_output/dat/

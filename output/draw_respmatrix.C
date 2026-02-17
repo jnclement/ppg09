@@ -27,7 +27,7 @@ int draw_respmatrix(int radius_index = 4)
   miss->SetBorderSize(0);
   miss->AddText("Miss");
 
-  TPaveText* fake = new TPaveText(0.05,0.75,0.099,0.85,"NDC");
+  TPaveText* fake = new TPaveText(0.05,0.75,0.099,0.87,"NDC");
   fake->SetFillColor(kWhite);
   fake->SetBorderSize(0);
   fake->AddText("Fake");
@@ -90,6 +90,7 @@ int draw_respmatrix(int radius_index = 4)
 
   respmatrix->Draw("COLZ");
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
+  
   c->SaveAs("respmatrix_nosys.pdf");
 
   cout << h_normcal_withmiss->Integral(1,10,2,2)<< " " << h_normtruth_withfake->Integral(2,2,1,13) << endl;
@@ -98,18 +99,20 @@ int draw_respmatrix(int radius_index = 4)
   h_normcal_withmiss->GetZaxis()->SetRangeUser(h_normcal_withmiss->GetMinimum(),h_normcal_withmiss->GetMaximum());
   h_normcal_withmiss->Draw("COLZ");
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
+  drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
   miss->Draw();
-  c->SaveAs(("h_respmatrix_rownormed_withmiss_r0"+to_string(radius_index)+".pdf").c_str());
+  c->SaveAs(("h_respmatrix_rownormed_nozvtx_withmiss_r0"+to_string(radius_index)+".pdf").c_str());
 
   h_normtruth_withfake->GetZaxis()->SetRangeUser(h_normtruth_withfake->GetMinimum(),h_normtruth_withfake->GetMaximum());
   h_normtruth_withfake->GetZaxis()->SetTitleOffset(1.57);
   h_normtruth_withfake->Draw("COLZ");
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
+  drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
   fake->Draw();
   TText* tt = fake->GetLineWith("Fake");
   tt->SetTextAngle(90);
   gPad->Modified();
-  c->SaveAs(("h_respmatrix_colnormed_withfake_r0"+to_string(radius_index)+".pdf").c_str());
+  c->SaveAs(("h_respmatrix_colnormed_nozvtx_withfake_r0"+to_string(radius_index)+".pdf").c_str());
   
 
   file->Close();

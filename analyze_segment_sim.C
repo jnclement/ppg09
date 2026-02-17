@@ -279,119 +279,120 @@ void get_truthjet(std::vector<float>& goodtruthjet_pt, std::vector<float>& goodt
     }
 }
   
-int analyze_segment_sim(string runtype, int iseg, int nseg)
+int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 {
 
   double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000;
+  jet_rad = 0.1*radius_index;
   if (runtype == "mb")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 0; truthjet_pt_max = 5; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 0; truthjet_pt_max = 6; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
       truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;
     }
   else if (runtype == "jet5")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 5; truthjet_pt_max = 12; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
       truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;
     }
   else if (runtype == "jet10")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
       truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;
     }
   else if (runtype == "jet15")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
       truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;
     }
   else if (runtype == "jet20")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
       truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;
     }
   else if (runtype == "jet30")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
       truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;
     }
   else if (runtype == "jet50")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
       truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;
     }
   else if (runtype == "jet70")
     {
-      if (jet_rad == 0.2)
+      if (radius_index == 2)
 	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.3)
+      else if (radius_index == 3)
 	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.4)
+      else if (radius_index == 4)
 	{truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.5)
+      else if (radius_index == 5)
 	{truthjet_pt_min = 75; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-      else if (jet_rad == 0.6)
+      else if (radius_index == 6)
 	{truthjet_pt_min = 79; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
       truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;
     }
@@ -460,7 +461,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   mbt[0] = (TF1*)fmb->Get("mbdtrig04_nominal");
   mbt[1] = (TF1*)fmb->Get("mbdtrig04_up");
   mbt[2] = (TF1*)fmb->Get("mbdtrig04_down");
-  int jet_radius_index = 4;
+  int jet_radius_index = radius_index;
   TFile *f_reweight = new TFile(Form("output_reweightfunction_r0%d.root", jet_radius_index), "READ");
   TF1 *f_reweightfunc_all = (TF1*)f_reweight->Get("reweightfunc_all");
   TF1 *f_reweightfunc_all_jesup = (TF1*)f_reweight->Get("reweightfunc_all_jesup");
@@ -711,7 +712,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
       get_calibjet(calibjet_pt_jerdown, calibjet_eta_jerdown, calibjet_phi_jerdown, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.05);
       
       sw = 1;
-      match_meas_truth(calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       sw = 0;
       
       fill_response_matrix(h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all,
@@ -822,7 +823,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 	    }
 	}
 
-      match_meas_truth(calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       fill_response_matrix(h_truth_all_jesup, h_measure_all_jesup, h_respmatrix_all_jesup, h_fake_all_jesup, h_miss_all_jesup,
 			   h_matchedtruth_weighted_all_jesup, h_matchedtruth_unweighted_all_jesup, h_measure_unweighted_all_jesup,
 			   scale_zvertexreweight, f_reweightfunc_all_jesup,
@@ -839,7 +840,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 				    calibjet_pt_jesup, calibjet_matched_jesup,
 				    goodtruthjet_pt, goodtruthjet_matched);
                                            
-      match_meas_truth(calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       fill_response_matrix(h_truth_all_jesdown, h_measure_all_jesdown, h_respmatrix_all_jesdown, h_fake_all_jesdown, h_miss_all_jesdown,
 			   h_matchedtruth_weighted_all_jesdown, h_matchedtruth_unweighted_all_jesdown, h_measure_unweighted_all_jesdown,
 			   scale_zvertexreweight, f_reweightfunc_all_jesdown,
@@ -856,7 +857,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 				    calibjet_pt_jesdown, calibjet_matched_jesdown,
 				    goodtruthjet_pt, goodtruthjet_matched);
 
-      match_meas_truth(calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta_jerup, calibjet_phi_jerup, calibjet_matched_jerup, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       fill_response_matrix(h_truth_all_jerup, h_measure_all_jerup, h_respmatrix_all_jerup, h_fake_all_jerup, h_miss_all_jerup,
 			   h_matchedtruth_weighted_all_jerup, h_matchedtruth_unweighted_all_jerup, h_measure_unweighted_all_jerup,
 			   scale_zvertexreweight, f_reweightfunc_all_jerup,
@@ -873,7 +874,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 				    calibjet_pt_jerup, calibjet_matched_jerup,
 				    goodtruthjet_pt, goodtruthjet_matched);
 
-      match_meas_truth(calibjet_eta_jerdown, calibjet_phi_jerdown, calibjet_matched_jerdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta_jerdown, calibjet_phi_jerdown, calibjet_matched_jerdown, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       fill_response_matrix(h_truth_all_jerdown, h_measure_all_jerdown, h_respmatrix_all_jerdown, h_fake_all_jerdown, h_miss_all_jerdown,
 			   h_matchedtruth_weighted_all_jerdown, h_matchedtruth_unweighted_all_jerdown, h_measure_unweighted_all_jerdown,
 			   scale_zvertexreweight, f_reweightfunc_all_jerdown,
@@ -889,7 +890,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
 				    scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_zvertex60_jerdown,
 				    calibjet_pt_jerdown, calibjet_matched_jerdown,
 				    goodtruthjet_pt, goodtruthjet_matched);
-      match_meas_truth(calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      match_reco_truth(calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
       fill_response_matrix(h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear,
 			   h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear,
 			   scale_zvertexreweight, f_reweightfunc_all,
@@ -906,7 +907,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg)
   // Fill event histograms.
   h_event_all->Fill(0.5, chain.GetEntries());
 
-  TFile* outf = TFile::Open(("output/output_"+runtype+"_"+to_string(iseg)+"_"+to_string(iseg+nseg)+".root").c_str(),"RECREATE");
+  TFile* outf = TFile::Open(("output/output_"+runtype+"_"+to_string(iseg)+"_"+to_string(iseg+nseg)+"_r0"+to_string(radius_index)+".root").c_str(),"RECREATE");
   outf->cd();
   h_event_all->Write();
   h_event_beforecut->Write();

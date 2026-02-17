@@ -32,6 +32,6 @@ done
 
 mkdir output
 
-root -l -b -q 'analyze_segment_sim.C("'$2'",'$N',20)'
+root -l -b -q 'analyze_segment_sim.C("'$2'",'$N',20,'$3')'
 mkdir -p /sphenix/user/jocl/projects/ppg09/ana_output/$2
 cp output/* /sphenix/user/jocl/projects/ppg09/ana_output/$2

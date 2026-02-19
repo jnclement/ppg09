@@ -7,8 +7,8 @@ fi
 TAG=$1
 ISDAT=$2
 RAD=$3
-TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 29))
-TOSUB=$(( $TOSUB / 30 ))
+TOSUB=$(( `cat seglist_$TAG.list | wc -l` + 19))
+TOSUB=$(( $TOSUB / 20 ))
 BASENAME="condor_${TAG}"
 PREFIX="."
 SUBNAME="${BASENAME}.sub"

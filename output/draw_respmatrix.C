@@ -12,7 +12,7 @@ int draw_respmatrix(int radius_index = 4)
   int calibnpt = sizeof(calibptbins) / sizeof(calibptbins[0]) - 1;
   int truthnpt = sizeof(truthptbins) / sizeof(truthptbins[0]) - 1;
   
-  TFile* file = TFile::Open(("/sphenix/user/hanpuj/CaloDataAna24_ppg09/offline/analysis_unfold_test/output_sim_r0"+to_string(radius_index)+".root").c_str());
+  TFile* file = TFile::Open(("../output_comb_r0"+to_string(radius_index)+".root").c_str(),"READ");//("/sphenix/user/hanpuj/CaloDataAna24_ppg09/offline/analysis_unfold_test/output_sim_r0"+to_string(radius_index)+".root").c_str());
 
   TH2D* respmatrix = (TH2D*)file->Get("h_respmatrix_all");
   TH1D* hmiss = (TH1D*)file->Get("h_miss_all");
@@ -101,7 +101,7 @@ int draw_respmatrix(int radius_index = 4)
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
   drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
   miss->Draw();
-  c->SaveAs(("h_respmatrix_rownormed_nozvtx_withmiss_r0"+to_string(radius_index)+".pdf").c_str());
+  c->SaveAs(("h_respmatrix_rownormed_all_withmiss_r0"+to_string(radius_index)+".pdf").c_str());
 
   h_normtruth_withfake->GetZaxis()->SetRangeUser(h_normtruth_withfake->GetMinimum(),h_normtruth_withfake->GetMaximum());
   h_normtruth_withfake->GetZaxis()->SetTitleOffset(1.57);
@@ -112,7 +112,7 @@ int draw_respmatrix(int radius_index = 4)
   TText* tt = fake->GetLineWith("Fake");
   tt->SetTextAngle(90);
   gPad->Modified();
-  c->SaveAs(("h_respmatrix_colnormed_nozvtx_withfake_r0"+to_string(radius_index)+".pdf").c_str());
+  c->SaveAs(("h_respmatrix_colnormed_all_withfake_r0"+to_string(radius_index)+".pdf").c_str());
   
 
   file->Close();

@@ -131,7 +131,7 @@ void filter_jets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_e
   filter.clear();
   for(int i=0; i<jet_n; ++i)
     {
-      filter.push_back(jet_e[i]<0 || check_bad_jet_eta(jet_eta[i], zvertex, jet_rad) || jet_pt[i]<1 || abs(jet_eta[i])>1.1-jet_rad);
+      filter.push_back(jet_e[i]<0 || check_bad_jet_eta(jet_eta[i], zvertex, jet_rad) || jet_pt[i]<1);// || abs(jet_eta[i])>1.1-jet_rad);
     }
 }
 
@@ -140,7 +140,7 @@ void filter_tjets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_
   filter.clear();
   for(int i=0; i<jet_n; ++i)
     {
-      filter.push_back(jet_e[i]<0 || jet_pt[i]<1 || abs(jet_eta[i])>1.1-jet_rad);
+      filter.push_back(jet_e[i]<0 || jet_pt[i]<1 || check_bad_jet_eta(jet_eta[i],zvertex,jet_rad));// || abs(jet_eta[i])>1.1-jet_rad);
     }
 }
 int sw = 0;
@@ -148,6 +148,23 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
 {
   reco_matched.assign(reco_eta.size(), -1);
   truth_matched.assign(truth_eta.size(), -1);
+
+  for(int ir=reco_eta.size()-1; ir>-1; --ir)
+    {
+      float dphi = 0;
+      float match_index = -9999;
+      for(int it = truth_eta.size()-1; it>-1; --it)
+	{
+	  dphi = get_dphi(reco_phi[ir],truth_phi[it]);
+	  if(abs(dphi) < M_PI/4 && truth_matched[it] == -1)
+	    {
+	      reco_matched[ir] = it;
+	      truth_matched[it] = ir;
+	      break;
+	    }
+	}
+    }
+  /*
   float max_match_dR = jet_radius * 0.75;
   for (int im = 0; im < reco_eta.size(); ++im)
     {
@@ -185,6 +202,7 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
 	    }
 	}
     }
+  */
 }
 
 void fill_response_matrix(TH1D*& h_truth, TH1D*& h_reco, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_reco_unw, double scale, TF1* f_reweight, std::vector<float>& reco_pt, std::vector<float>& reco_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched)
@@ -907,7 +925,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   // Fill event histograms.
   h_event_all->Fill(0.5, chain.GetEntries());
 
-  TFile* outf = TFile::Open(("output/output_"+runtype+"_"+to_string(iseg)+"_"+to_string(iseg+nseg)+"_r0"+to_string(radius_index)+".root").c_str(),"RECREATE");
+  TFile* outf = TFile::Open(("output/output_"+runtype+"_"+to_string(iseg)+"_"+to_string(iseg+nseg-1)+"_r0"+to_string(radius_index)+".root").c_str(),"RECREATE");
   outf->cd();
   h_event_all->Write();
   h_event_beforecut->Write();

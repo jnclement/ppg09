@@ -6,22 +6,6 @@
 #    ls -v /sphenix/tg/tg01/jets/jocl/chi2/$rn/*20260216*chi2file* >> seglist_data.list #ls /sphenix/tg/tg01/jets/jocl/chi2/$rn/*20260116_dat*chi2file* >> seglist_data.list
 #done
 
-rm seglist_mb.list
-for i in {0..1999}; do
-    echo $i
-    ls -v /sphenix/tg/tg01/jets/jocl/chi2/$i/*20260209_mb*chi2file* >> seglist_mb.list
+for stype in mb; do # jet5 jet12 jet20 jet30 jet40 jet50 jet60; do
+    find /sphenix/tg/tg01/jets/jocl/chi2/ -type f -name "*20260219_${stype}_*chi2file*" -print | sort -V > seglist_$stype.list
 done
-
-exit 0
-
-for stype in jet5 jet12 jet20 jet30 jet40 jet50 jet60; do
-    rm seglist_$stype.list
-    for i in {0..1999}; do
-	echo $stype $i
-	ls -v /sphenix/tg/tg01/jets/jocl/chi2/$i/*20260219_$stype\_*chi2file* >> seglist_$stype.list
-    done
-done
-
-exit 0
-
-

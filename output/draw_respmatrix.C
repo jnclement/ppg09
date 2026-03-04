@@ -2,7 +2,7 @@
 
 int draw_respmatrix(string type = "all", int radius_index = 4)
 {
-
+  gStyle->SetPaintTextFormat("1.3f");
   double calibptbins[] = {7, 11, 15, 19, 24, 29, 35, 41, 48, 56, 65, 75};
   double truthptbins[] = {7, 11, 15, 19, 24, 29, 35, 41, 48, 56, 65, 75, 86};
 
@@ -38,7 +38,7 @@ int draw_respmatrix(string type = "all", int radius_index = 4)
 
   for(int i=1; i<calibnpt+1; ++i)
     {
-      colsums[i-1] += abs(respmatrix->Integral(i,i,1,13));
+      colsums[i-1] += abs(respmatrix->Integral(i,i,1,12));
       cout << "before: " << colsums[i-1] << endl;
       colsums[i-1] += abs(hfake->GetBinContent(i));
       cout << "after:" << colsums[i-1] << endl;
@@ -47,7 +47,7 @@ int draw_respmatrix(string type = "all", int radius_index = 4)
   cout << endl << endl;
   for(int i=1; i<truthnpt+1; ++i)
     {
-      rowsums[i-1] += abs(respmatrix->Integral(1,13,i,i));
+      rowsums[i-1] += abs(respmatrix->Integral(1,11,i,i));
       cout << "before: " << rowsums[i-1] << endl;
       rowsums[i-1] += abs(hmiss->GetBinContent(i));
       cout << "after:" << rowsums[i-1] << endl;
@@ -94,23 +94,25 @@ int draw_respmatrix(string type = "all", int radius_index = 4)
   
   c->SaveAs("respmatrix_nosys.pdf");
 
-  cout << h_normcal_withmiss->Integral(1,13,2,2)<< " " << h_normtruth_withfake->Integral(2,2,1,13) << endl;
+  cout << h_normcal_withmiss->Integral(1,11,2,2)<< " " << h_normtruth_withfake->Integral(2,2,1,12) << endl;
 
   h_normcal_withmiss->GetZaxis()->SetTitleOffset(1.57);
-  h_normcal_withmiss->GetZaxis()->SetRangeUser(h_normcal_withmiss->GetMinimum(),h_normcal_withmiss->GetMaximum());
-  h_normcal_withmiss->Draw("COLZ");
+  h_normcal_withmiss->GetZaxis()->SetRangeUser(0,1);
+  h_normcal_withmiss->Draw("COLZ TEXT");
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
   if(type=="all")drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
-  else drawText("|z_{vtx}|<60 cm required",0.7,0.86,0,kBlack,0.03);
+  else if(type=="nozvtx_nosmear")drawText("No z_{vtx} ALLOWED",0.7,0.86,0,kBlack,0.03);
+  else if(type=="zvertex60") drawText("|z_{vtx}|<60 cm required",0.7,0.86,0,kBlack,0.03);
   miss->Draw();
   c->SaveAs(("h_respmatrix_rownormed_"+type+"_withmiss_r0"+to_string(radius_index)+".pdf").c_str());
 
-  h_normtruth_withfake->GetZaxis()->SetRangeUser(h_normtruth_withfake->GetMinimum(),h_normtruth_withfake->GetMaximum());
+  h_normtruth_withfake->GetZaxis()->SetRangeUser(0,1);
   h_normtruth_withfake->GetZaxis()->SetTitleOffset(1.57);
-  h_normtruth_withfake->Draw("COLZ");
+  h_normtruth_withfake->Draw("COLZ TEXT");
   maintexts(0.96,0.7,0,0.03,0,0,radius_index);
-  if(type=="all") drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
-  else drawText("|z_{vtx}|<60 cm required",0.7,0.86,0,kBlack,0.03);
+  if(type=="all")drawText("No z_{vtx} required",0.7,0.86,0,kBlack,0.03);
+  else if(type=="nozvtx_nosmear")drawText("No z_{vtx} ALLOWED",0.7,0.86,0,kBlack,0.03);
+  else if(type=="zvertex60") drawText("|z_{vtx}|<60 cm required",0.7,0.86,0,kBlack,0.03);
   fake->Draw();
   TText* tt = fake->GetLineWith("Fake");
   tt->SetTextAngle(90);

@@ -131,7 +131,7 @@ void filter_jets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_e
   filter.clear();
   for(int i=0; i<jet_n; ++i)
     {
-      filter.push_back(jet_e[i]<0 || check_bad_jet_eta(jet_eta[i], zvertex, jet_rad) || jet_pt[i]<1 || abs(jet_eta[i])>1.1-jet_rad);
+      filter.push_back(jet_e[i]<0 || check_bad_jet_eta(jet_eta[i], zvertex, jet_rad) || jet_pt[i]<1);// || abs(jet_eta[i])>1.1-jet_rad);
     }
 }
 
@@ -140,10 +140,48 @@ void filter_tjets(vector<bool>& filter, float* jet_e, float* jet_pt, float* jet_
   filter.clear();
   for(int i=0; i<jet_n; ++i)
     {
-      filter.push_back(jet_e[i]<0 || jet_pt[i]<1 || check_bad_jet_eta(jet_eta[i],zvertex,jet_rad) || abs(jet_eta[i])>1.1-jet_rad);
+      filter.push_back(jet_e[i]<0 || jet_pt[i]<1 || abs(jet_eta[i])>1.1-jet_rad); //check_bad_jet_eta(jet_eta[i],zvertex,jet_rad));// || ;
     }
 }
 int sw = 0;
+bool isbg;
+void check_miss_print(std::vector<float>& calib_pt, std::vector<float>& calib_eta, std::vector<float>& calib_phi, std::vector<float>& calib_matched, std::vector<float>& truth_pt, std::vector<float>& truth_eta, std::vector<float>& truth_phi, std::vector<float>& truth_matched, float* reco_pt, float* reco_eta, float* reco_phi, int jet_n)
+{
+  bool has_miss_around_40 = false;
+  for(int i=0; i<truth_matched.size(); ++i)
+    {
+      if(truth_pt.at(i) >35 && truth_pt.at(i) < 50 && truth_matched.at(i) == -1)
+	{
+	  has_miss_around_40 = true;
+	  break;
+	}
+    }
+  /*
+  if(has_miss_around_40)
+    {
+      
+      cout << endl;
+      if(isbg) cout << "fails some background cut" << endl;
+      cout << "calib jets:" << endl;
+      for(int i=0; i<calib_pt.size(); ++i)
+	{
+	  cout << "pt/eta/phi/mindex: " << calib_pt.at(i) << " " << calib_eta.at(i) << " " << calib_phi.at(i) << " " << calib_matched.at(i) << endl;
+	}
+      cout << "truth jets:" << endl;
+      for(int i=0; i<truth_pt.size(); ++i)
+	{
+	  cout << "pt/eta/phi/mindex: " << truth_pt.at(i) << " " << truth_eta.at(i) << " " << truth_phi.at(i) << " " << truth_matched.at(i) << endl;
+	}
+      cout << "all reco jets:" << endl;
+      for(int i=0; i<jet_n; ++i)
+	{
+	  cout << "pt/eta/phi: " << reco_pt[i] << " " << reco_eta[i] << " " << reco_phi[i] << endl;
+	}
+      cout << endl;
+    }
+  */
+}
+
 void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi, std::vector<float>& reco_matched, std::vector<float>& truth_eta, std::vector<float>& truth_phi, std::vector<float>& truth_matched, float jet_radius, bool has_zvertex)
 {
   reco_matched.assign(reco_eta.size(), -1);
@@ -263,8 +301,8 @@ void build_hist(std::string tag, TH1D*& h_truth, TH1D*& h_measure, TH2D*& h_resp
 }
 
 
-bool isbg;
-void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, int jet_n, float* jet_pt, float* jet_eta, float* jet_phi, float jes, float jer)
+
+void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, int jet_n, float* jet_pt, float* jet_eta, float* jet_phi, float jes, float jer, bool keepall = false)
 {
   calibjet_pt.clear();
   calibjet_eta.clear();
@@ -272,11 +310,11 @@ void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_
 
   for(int i=0; i<jet_n; ++i)
     {
-      if(jet_filter.at(i) || isbg) continue;
+      if(!keepall && (jet_filter.at(i) || isbg)) continue;
       double calib_pt;
       if(jer != 0) calib_pt = jet_pt[i]*(1+randGen.Gaus(0.0,jer))*jes;
       else calib_pt = jet_pt[i];
-      if (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt]) continue;
+      if (!keepall && (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt])) continue;
       calibjet_pt.push_back(calib_pt);
       calibjet_eta.push_back(jet_eta[i]);
       calibjet_phi.push_back(jet_phi[i]);
@@ -301,7 +339,7 @@ void get_truthjet(std::vector<float>& goodtruthjet_pt, std::vector<float>& goodt
 int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 {
 
-  double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000;
+  double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000, calibjet_pt_max = 1000;
   jet_rad = 0.1*radius_index;
   if (runtype == "mb")
     {
@@ -310,12 +348,12 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       else if (radius_index == 3)
 	{truthjet_pt_min = 0; truthjet_pt_max = 6; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;}
+	{truthjet_pt_min = 0; truthjet_pt_max = 7; }// recojet_pt_max = 14;}
       else if (radius_index == 5)
 	{truthjet_pt_min = 0; truthjet_pt_max = 10; recojet_pt_max = 1000;}
       else if (radius_index == 6)
 	{truthjet_pt_min = 0; truthjet_pt_max = 11; recojet_pt_max = 1000;}
-      truthjet_pt_min = 0; truthjet_pt_max = 7; recojet_pt_max = 14;
+      calibjet_pt_max = 20;
     }
   else if (runtype == "jet5")
     {
@@ -324,96 +362,95 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       else if (radius_index == 3)
 	{truthjet_pt_min = 6; truthjet_pt_max = 13; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;}
+	{truthjet_pt_min = 7; truthjet_pt_max = 14; }//recojet_pt_max = 24;}
       else if (radius_index == 5)
 	{truthjet_pt_min = 10; truthjet_pt_max = 15; recojet_pt_max = 1000;}
       else if (radius_index == 6)
 	{truthjet_pt_min = 11; truthjet_pt_max = 17; recojet_pt_max = 1000;}
-      truthjet_pt_min = 7; truthjet_pt_max = 14; recojet_pt_max = 24;
+      calibjet_pt_max = 28;
     }
-  else if (runtype == "jet10")
+  else if (runtype == "jet12")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 12; truthjet_pt_max = 15; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 12; truthjet_pt_max = 20; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 13; truthjet_pt_max = 16; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 13; truthjet_pt_max = 21; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;}
+	{truthjet_pt_min = 14; truthjet_pt_max = 21; }// recojet_pt_max = 33;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 15; truthjet_pt_max = 24; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 15; truthjet_pt_max = 27; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 17; truthjet_pt_max = 26; recojet_pt_max = 1000;}
-      truthjet_pt_min = 14; truthjet_pt_max = 17; recojet_pt_max = 33;
+	{truthjet_pt_min = 17; truthjet_pt_max = 29; recojet_pt_max = 1000;}
+      calibjet_pt_max = 42;
     }
-  else if (runtype == "jet15")
+  else if (runtype == "jet40")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 15; truthjet_pt_max = 20; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 40; truthjet_pt_max = 50; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 16; truthjet_pt_max = 21; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 41; truthjet_pt_max = 51; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;}
+	{truthjet_pt_min = 42; truthjet_pt_max = 52; recojet_pt_max = 1000;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 24; truthjet_pt_max = 30; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 49; truthjet_pt_max = 58; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 26; truthjet_pt_max = 35; recojet_pt_max = 1000;}
-      truthjet_pt_min = 17; truthjet_pt_max = 22; recojet_pt_max = 45;
+	{truthjet_pt_min = 53; truthjet_pt_max = 63; recojet_pt_max = 1000;}
+      calibjet_pt_max = 1000;
     }
   else if (runtype == "jet20")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 20; truthjet_pt_max = 31; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 20; truthjet_pt_max = 30; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 21; truthjet_pt_max = 33; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 21; truthjet_pt_max = 31; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;}
+	{truthjet_pt_min = 21; truthjet_pt_max = 32; recojet_pt_max = 1000;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 27; truthjet_pt_max = 38; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 35; truthjet_pt_max = 45; recojet_pt_max = 1000;}
-      truthjet_pt_min = 22; truthjet_pt_max = 35; recojet_pt_max = 59;
+	{truthjet_pt_min = 29; truthjet_pt_max = 41; recojet_pt_max = 1000;}
+      calibjet_pt_max = 64;
     }
   else if (runtype == "jet30")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 31; truthjet_pt_max = 50; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 30; truthjet_pt_max = 40; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 33; truthjet_pt_max = 51; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 31; truthjet_pt_max = 41; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;}
+	{truthjet_pt_min = 32; truthjet_pt_max = 42; recojet_pt_max = 1000;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 40; truthjet_pt_max = 60; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 38; truthjet_pt_max = 49; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 45; truthjet_pt_max = 63; recojet_pt_max = 1000;}
-      truthjet_pt_min = 35; truthjet_pt_max = 52; recojet_pt_max = 72;
+	{truthjet_pt_min = 41; truthjet_pt_max = 53; recojet_pt_max = 1000;}
+      calibjet_pt_max = 88;
     }
   else if (runtype == "jet50")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 50; truthjet_pt_max = 70; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 50; truthjet_pt_max = 60; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 51; truthjet_pt_max = 70; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 51; truthjet_pt_max = 61; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 52; truthjet_pt_max = 62; recojet_pt_max = 1000;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 60; truthjet_pt_max = 75; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 58; truthjet_pt_max = 68; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 63; truthjet_pt_max = 79; recojet_pt_max = 1000;}
-      truthjet_pt_min = 52; truthjet_pt_max = 71; recojet_pt_max = 1000;
+	{truthjet_pt_min = 63; truthjet_pt_max = 72; recojet_pt_max = 1000;}
+      calibjet_pt_max = 1000;
     }
-  else if (runtype == "jet70")
+  else if (runtype == "jet60")
     {
       if (radius_index == 2)
-	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 60; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
       else if (radius_index == 3)
-	{truthjet_pt_min = 70; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 61; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
       else if (radius_index == 4)
-	{truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 62; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
       else if (radius_index == 5)
-	{truthjet_pt_min = 75; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
+	{truthjet_pt_min = 68; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
       else if (radius_index == 6)
-	{truthjet_pt_min = 79; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
-      truthjet_pt_min = 71; truthjet_pt_max = 3000; recojet_pt_max = 1000;
+	{truthjet_pt_min = 72; truthjet_pt_max = 3000; recojet_pt_max = 1000;}
     }
 
   
@@ -425,6 +462,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
     }
 
   float zvtx;
+  float tzvtx;
   float jet_e[100];
   float jet_pt[100];
   float jet_et[100];
@@ -444,6 +482,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 
   chain.SetBranchAddress("mbdhit",mbdhit);
   chain.SetBranchAddress("zvtx",&zvtx);
+  chain.SetBranchAddress("tzvtx",&tzvtx);
   chain.SetBranchAddress("jet_et",jet_e);
   chain.SetBranchAddress("jet_pt",jet_pt);
   chain.SetBranchAddress("jet_etrans",jet_et);
@@ -519,13 +558,22 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_truthjet_pt_record_all = new TH1D("h_truthjet_pt_record_all", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
+  TH1D *h_truthjet_pt_record_all = new TH1D("h_truthjet_pt_record_all", ";p_{T}^{Truth jet} [GeV]", 1000,0,100);
   // Nominal histograms
 
-  TH1D* h_calib_dijet_all = new TH1D("h_calib_dijet_all",";p_{T}^{calib} [GeV];Counts",100,0,100);
-  TH1D* h_calib_mbd_and_dijet = new TH1D("h_calib_mbd_and_dijet",";p_{T}^{calib} [GeV];Counts",100,0,100);
-  TH1D* h_calib_mbd_all = new TH1D("h_calib_mbd_all",";p_{T}^{calib} [GeV];Counts",100,0,100);
-  TH1D* h_calib_all = new TH1D("h_calib_all",";p_{T}^{calib} [GeV];Counts",100,0,100);
+  TH2D* h_calib_dijet_all = new TH2D("h_calib_dijet_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
+  TH2D* h_calib_mbd_and_dijet = new TH2D("h_calib_mbd_and_dijet",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
+  TH2D* h_calib_mbd_all = new TH2D("h_calib_mbd_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
+  TH2D* h_calib_all = new TH2D("h_calib_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
+  TH1D* h_recojet_eta_3045 = new TH1D("h_recojet_eta_3045",";#eta;Counts",300,-1.5,1.5);
+  TH1D* h_truthjet_eta_3045 = new TH1D("h_truthjet_eta_3045",";#eta;Counts",300,-1.5,1.5);
+  
+  TH3D* h_nzz_tz_pt_reco_fail = new TH3D("h_nzz_tz_pt_reco_fail",";z_{vtx}^{reco} [cm];z_{truth} [cm];p_{T}^{uncalib} [GeV];Counts",300,-150,150,300,-150,150,100,0,100);
+  TH2D* h_zz_tz_pt_reco_fail = new TH2D("h_zz_tz_pt_reco_fail",";z_{truth} [cm];p_{T}^{uncalib} [GeV];Counts",300,-150,150,100,0,100);
+  TH3D* h_nzz_tz_pt_reco_all = new TH3D("h_nzz_tz_pt_reco_all",";z_{vtx}^{reco} [cm];z_{truth} [cm];p_{T}^{uncalib} [GeV];Counts",300,-150,150,300,-150,150,100,0,100);
+  TH2D* h_zz_tz_pt_reco_all = new TH2D("h_zz_tz_pt_reco_all",";z_{truth} [cm];p_{T}^{uncalib} [GeV];Counts",300,-150,150,100,0,100);
+  TH2D* h_tz_teta = new TH2D("h_tz_teta",";z_{truth} [cm];#eta_{truth}",300,-150,150,50,-2.5,2.5);
+
   
   TH2D *h_respmatrix_all; TH1D *h_truth_all, *h_measure_all, *h_fake_all, *h_miss_all, *h_matchedtruth_weighted_all, *h_matchedtruth_unweighted_all, *h_measure_unweighted_all;
   build_hist("all", h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all, h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all);
@@ -535,6 +583,14 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 
   TH2D *h_respmatrix_zvertex60_nosmear; TH1D *h_truth_zvertex60_nosmear, *h_measure_zvertex60_nosmear, *h_fake_zvertex60_nosmear, *h_miss_zvertex60_nosmear, *h_matchedtruth_weighted_zvertex60_nosmear, *h_matchedtruth_unweighted_zvertex60_nosmear, *h_measure_unweighted_zvertex60_nosmear;
   build_hist("zvertex60_nosmear", h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear, h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear);
+
+
+
+
+  TH2D *h_respmatrix_nozvtx_nosmear; TH1D *h_truth_nozvtx_nosmear, *h_measure_nozvtx_nosmear, *h_fake_nozvtx_nosmear, *h_miss_nozvtx_nosmear, *h_matchedtruth_weighted_nozvtx_nosmear, *h_matchedtruth_unweighted_nozvtx_nosmear, *h_measure_unweighted_nozvtx_nosmear;
+  build_hist("nozvtx_nosmear", h_truth_nozvtx_nosmear, h_measure_nozvtx_nosmear, h_respmatrix_nozvtx_nosmear, h_fake_nozvtx_nosmear, h_miss_nozvtx_nosmear, h_matchedtruth_weighted_nozvtx_nosmear, h_matchedtruth_unweighted_nozvtx_nosmear, h_measure_unweighted_nozvtx_nosmear);
+  
+  
 
   
   TH2D *h_respmatrix_zvertex30; TH1D *h_truth_zvertex30, *h_measure_zvertex30, *h_fake_zvertex30, *h_miss_zvertex30, *h_matchedtruth_weighted_zvertex30, *h_matchedtruth_unweighted_zvertex30, *h_measure_unweighted_zvertex30;
@@ -614,10 +670,13 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   long long unsigned int nevt = chain.GetEntries();
   bool bgdj, bgnj, z30, z60, is22, is18;
   vector<bool> jet_filter, tjet_filter;
-  std::vector<float> goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched;
+  std::vector<float> goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, goodtruthjet_matched_wbg;
+  
   std::vector<float> calibjet_pt, calibjet_eta, calibjet_phi, calibjet_matched;
 
   std::vector<float> calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, calibjet_matched_nosmear;
+
+  std::vector<float> calibjet_pt_wbg, calibjet_eta_wbg, calibjet_phi_wbg, calibjet_matched_wbg;
     
   std::vector<float> calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, calibjet_matched_jesup;
   std::vector<float> calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, calibjet_matched_jesdown;
@@ -654,6 +713,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       float ltjpt = -9999;
       for(int j=0; j<tjet_n; ++j)
 	{
+	  if(tjet_pt[j] > 30 && tjet_pt[j] < 45) h_truthjet_eta_3045->Fill(tjet_eta[j]);	      
+	  
 	  if(abs(tjet_eta[j]) > 1.5-jet_rad) continue;
 	  if(tjet_pt[j] > ltjpt)
 	    {
@@ -704,14 +765,39 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       
       filter_jets(jet_filter, jet_e, jet_pt, jet_eta, zvtx, jet_n);
       filter_tjets(tjet_filter, tjet_e, tjet_pt, tjet_eta, zvtx, tjet_n);
-      
+
+      if(ltjpt > 32 && ltjpt < 35)
+	{
+	  for(int j=0; j<jet_n; ++j)
+	    {
+	      if(jet_filter.at(j)) continue;
+	      if(zvtx != 0)
+		{
+		  if(jet_e[j] < 0) continue;
+		  h_nzz_tz_pt_reco_all->Fill(zvtx,tzvtx,jet_pt[j]);
+		  if(jet_filter.at(j))
+		    {
+		      h_nzz_tz_pt_reco_fail->Fill(zvtx,tzvtx,jet_pt[j]);
+		    }
+		}
+	      else
+		{
+		  if(jet_e[j] < 0) continue;
+		  h_zz_tz_pt_reco_all->Fill(tzvtx,jet_pt[j]);
+		  if(jet_filter.at(j))
+		    {
+		      h_zz_tz_pt_reco_fail->Fill(tzvtx,jet_pt[j]);
+		    }
+		}
+	    }
+	}
       for(int j=0; j<jet_filter.size(); ++j)
 	{
 	  if(jet_filter.at(j)) continue;
-
+	  
 	  h_recojet_pt_record_nocut_all->Fill(jet_pt[j]);
 	  if(!bgnj && !bgdj) h_recojet_pt_record_all->Fill(jet_pt[j]);
-
+	  
 	  if(z60)
 	    {
 	      h_recojet_pt_record_nocut_zvertex60->Fill(jet_pt[j]);
@@ -723,7 +809,34 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 		}
 	    }
 	}
-      
+      isbg = false;
+
+      get_calibjet(calibjet_pt_wbg, calibjet_eta_wbg, calibjet_phi_wbg, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0, true);
+      match_reco_truth(calibjet_eta_wbg, calibjet_phi_wbg, calibjet_matched_wbg, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched_wbg, jet_rad, has_zvtx);
+      float l = 0;
+      for(int k=0; k<calibjet_pt_wbg.size(); ++k)
+	{
+	  if(calibjet_pt_wbg[k] > 30 && jet_pt[k] < 45) h_recojet_eta_3045->Fill(calibjet_eta_wbg[k]);
+	  if(calibjet_pt_wbg.at(k) > l/* && calibjet_matched_wbg.at(k) >= 0*/) l = calibjet_pt_wbg.at(k);
+	}
+      if(!bgnj && l>0 && l<calibjet_pt_max)
+	{
+	  
+	  zvtx!=0?h_calib_all->Fill(l,zvtx):h_calib_all->Fill(l,-999);
+	  if(!bgdj)
+	    {
+	      zvtx!=0?h_calib_dijet_all->Fill(l,zvtx):h_calib_dijet_all->Fill(l,-999);
+	      if(has_zvtx)
+		{
+		  zvtx!=0?h_calib_mbd_and_dijet->Fill(l,zvtx):h_calib_mbd_and_dijet->Fill(l,-999);
+		}
+	    }
+	  if(has_zvtx)
+	    {
+	      zvtx!=0?h_calib_mbd_all->Fill(l,zvtx):h_calib_mbd_all->Fill(l,-999);
+	    }
+	}
+
       if(bgnj || bgdj) isbg = true;
       else isbg = false;
       h_event_passed->Fill(0.5);
@@ -731,26 +844,6 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.1);
 
       get_calibjet(calibjet_pt_nosmear, calibjet_eta_nosmear, calibjet_phi_nosmear, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0);
-
-      for(int l=0; l<calibjet_pt_nosmear.size(); ++l)
-	{
-	  if(!bgnj)
-	    {
-	      h_calib_all->Fill(calibjet_pt_nosmear.at(l));
-	      if(!bgdj)
-		{
-		  h_calib_dijet_all->Fill(calibjet_pt_nosmear.at(l));
-		  if(mbdhit[0] && mbdhit[1])
-		    {
-		      h_calib_mbd_and_dijet->Fill(calibjet_pt_nosmear.at(l));
-		    }
-		}
-	      if(mbdhit[0] && mbdhit[1])
-		{
-		  h_calib_mbd_all->Fill(calibjet_pt_nosmear.at(l));
-		}
-	    }
-	}
       get_calibjet(calibjet_pt_jesup, calibjet_eta_jesup, calibjet_phi_jesup, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1.06, 0.1);
       get_calibjet(calibjet_pt_jesdown, calibjet_eta_jesdown, calibjet_phi_jesdown, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 0.94, 0.1);
       get_calibjet(calibjet_pt_jerup, calibjet_eta_jerup, calibjet_phi_jerup, jet_filter, calib_jet_n, jet_pt_calib, jet_eta, jet_phi, 1, 0.15);
@@ -758,6 +851,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       
       sw = 1;
       match_reco_truth(calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_rad, has_zvtx);
+      check_miss_print(calibjet_pt, calibjet_eta, calibjet_phi, calibjet_matched, goodtruthjet_pt, goodtruthjet_eta, goodtruthjet_phi, goodtruthjet_matched, jet_pt, jet_eta, jet_phi, jet_n);
       sw = 0;
       
       fill_response_matrix(h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all,
@@ -947,6 +1041,12 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 					 calibjet_pt_nosmear, calibjet_matched_nosmear,
 					 goodtruthjet_pt, goodtruthjet_matched);
 
+      if(!has_zvtx)       fill_response_matrix(h_truth_nozvtx_nosmear, h_measure_nozvtx_nosmear, h_respmatrix_nozvtx_nosmear, h_fake_nozvtx_nosmear, h_miss_nozvtx_nosmear,
+					 h_matchedtruth_weighted_nozvtx_nosmear, h_matchedtruth_unweighted_nozvtx_nosmear, h_measure_unweighted_nozvtx_nosmear,
+					 scale_zvertexreweight*mbdtrig_scale_nominal, f_reweightfunc_all,
+					 calibjet_pt_nosmear, calibjet_matched_nosmear,
+					 goodtruthjet_pt, goodtruthjet_matched);
+
 
     } // event loop end
   // Fill event histograms.
@@ -972,6 +1072,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 
 
   h_truth_zvertex60_nosmear->Write(); h_measure_zvertex60_nosmear->Write(); h_respmatrix_zvertex60_nosmear->Write(); h_fake_zvertex60_nosmear->Write(); h_miss_zvertex60_nosmear->Write(); h_matchedtruth_weighted_zvertex60_nosmear->Write(); h_matchedtruth_unweighted_zvertex60_nosmear->Write(); h_measure_unweighted_zvertex60_nosmear->Write();
+
+  h_truth_nozvtx_nosmear->Write(); h_measure_nozvtx_nosmear->Write(); h_respmatrix_nozvtx_nosmear->Write(); h_fake_nozvtx_nosmear->Write(); h_miss_nozvtx_nosmear->Write(); h_matchedtruth_weighted_nozvtx_nosmear->Write(); h_matchedtruth_unweighted_nozvtx_nosmear->Write(); h_measure_unweighted_nozvtx_nosmear->Write();
 
   
   h_truth_zvertex30->Write(); h_measure_zvertex30->Write(); h_respmatrix_zvertex30->Write(); h_fake_zvertex30->Write(); h_miss_zvertex30->Write(); h_matchedtruth_weighted_zvertex30->Write(); h_matchedtruth_unweighted_zvertex30->Write(); h_measure_unweighted_zvertex30->Write();
@@ -1021,6 +1123,28 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   h_calib_mbd_all->Write();
   h_calib_dijet_all->Write();
   h_calib_mbd_and_dijet->Write();
+
+  h_recojet_eta_3045->Write();
+  h_truthjet_eta_3045->Write();
+
+  h_nzz_tz_pt_reco_fail->Write();
+  h_zz_tz_pt_reco_fail->Write();
+  h_nzz_tz_pt_reco_all->Write();
+  h_zz_tz_pt_reco_all->Write();
+  /*
+  h_nzz_tz_pt_truth_fail->Write();
+  h_zz_tz_pt_truth_fail->Write();
+  h_nzz_tz_pt_truth_all->Write();
+  h_zz_tz_pt_truth_all->Write();
+  */
+  
+  h_tz_teta->Write();
+  /*
+  h_nzz_tz_E_truth_fail->Write();
+  h_zz_tz_E_truth_fail->Write();
+  h_nzz_tz_E_truth_all->Write();
+  h_zz_tz_E_truth_all->Write();
+  */
   outf->Close();
   return 0;
 }

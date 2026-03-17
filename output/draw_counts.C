@@ -12,7 +12,7 @@ int draw_counts(int radius_index = 4)
   hist->SetMarkerStyle(20);
   hist->SetMarkerSize(1.5);
   hist->Rebin(10);
-  hist->GetXaxis()->SetRangeUser(15,75);
+  hist->GetXaxis()->SetRangeUser(15,100);
   hist->GetXaxis()->SetTitle("p_{T}^{calib} [GeV]");
   hist->GetYaxis()->SetTitle("Counts");
   float max = hist->GetMaximum()*2;
@@ -24,9 +24,10 @@ int draw_counts(int radius_index = 4)
   c->SetLogy();
   c->SetTopMargin(0.15);
   hist->Draw("PE");
-  double calibptbins[8] = {19, 24, 29, 35, 41, 48, 56, 65};
-  TLine* lines[8];
-  for(int i=0; i<8; ++i)
+  const int nline = 10;
+  double calibptbins[nline] = {19, 24, 29, 35, 41, 48, 56, 65, 75, 86};
+  TLine* lines[nline];
+  for(int i=0; i<nline; ++i)
     {
       lines[i] = new TLine(calibptbins[i],0.5,calibptbins[i],max);
       lines[i]->SetLineColor(kRed);

@@ -186,7 +186,7 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
 {
   reco_matched.assign(reco_eta.size(), -1);
   truth_matched.assign(truth_eta.size(), -1);
-  /*
+  
   for(int ir=reco_eta.size()-1; ir>-1; --ir)
     {
       float dphi = 0;
@@ -202,8 +202,8 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
 	    }
 	}
     }
-  */
   
+  /*
   float max_match_dR = jet_radius * 0.75;
   for (int im = 0; im < reco_eta.size(); ++im)
     {
@@ -241,7 +241,7 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
 	    }
 	}
     }
-  
+  */
 }
 
 void fill_response_matrix(TH1D*& h_truth, TH1D*& h_reco, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_reco_unw, double scale, TF1* f_reweight, std::vector<float>& reco_pt, std::vector<float>& reco_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched)
@@ -561,10 +561,23 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   TH1D *h_truthjet_pt_record_all = new TH1D("h_truthjet_pt_record_all", ";p_{T}^{Truth jet} [GeV]", 1000,0,100);
   // Nominal histograms
 
-  TH2D* h_calib_dijet_all = new TH2D("h_calib_dijet_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
-  TH2D* h_calib_mbd_and_dijet = new TH2D("h_calib_mbd_and_dijet",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
-  TH2D* h_calib_mbd_all = new TH2D("h_calib_mbd_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
-  TH2D* h_calib_all = new TH2D("h_calib_all",";p_{T}^{calib} [GeV];Counts",100,0,100,210,-105,105);
+  TH3D* h_calib_dijet_all = new TH3D("h_calib_dijet_all",";Leading p_{T}^{calib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_calib_mbd_and_dijet = new TH3D("h_calib_mbd_and_dijet",";Leading p_{T}^{calib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_calib_mbd_all = new TH3D("h_calib_mbd_all",";Leading p_{T}^{calib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_calib_all = new TH3D("h_calib_all",";Leading p_{T}^{calib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+
+  TH3D* h_uncalib_dijet_all = new TH3D("h_uncalib_dijet_all",";Leading p_{T}^{uncalib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_uncalib_mbd_and_dijet = new TH3D("h_uncalib_mbd_and_dijet",";Leading p_{T}^{uncalib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_uncalib_mbd_all = new TH3D("h_uncalib_mbd_all",";Leading p_{T}^{uncalib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_uncalib_all = new TH3D("h_uncalib_all",";Leading p_{T}^{uncalib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  
+  TH3D* h_truthm_dijet_all = new TH3D("h_truthm_dijet_all",";Leading p_{T}^{truth} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_truthm_mbd_and_dijet = new TH3D("h_truthm_mbd_and_dijet",";Leading p_{T}^{truth} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_truthm_mbd_all = new TH3D("h_truthm_mbd_all",";Leading p_{T}^{truth} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+  TH3D* h_truthm_all = new TH3D("h_truthm_all",";Leading p_{T}^{truth} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
+
+  TH2D* h_dijet_vs_mbd = new TH2D("h_dijet_vs_mbd",";Has Dijet;Has MBD coincidence",2,-0.5,1.5,2,-0.5,1.5);
+  
   TH1D* h_recojet_eta_3045 = new TH1D("h_recojet_eta_3045",";#eta;Counts",300,-1.5,1.5);
   TH1D* h_truthjet_eta_3045 = new TH1D("h_truthjet_eta_3045",";#eta;Counts",300,-1.5,1.5);
   
@@ -711,6 +724,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       
       int tlji = -1;
       float ltjpt = -9999;
+      int tsji = -1;
+      float stjpt = -9999;
       for(int j=0; j<tjet_n; ++j)
 	{
 	  if(tjet_pt[j] > 30 && tjet_pt[j] < 45) h_truthjet_eta_3045->Fill(tjet_eta[j]);	      
@@ -718,8 +733,15 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 	  if(abs(tjet_eta[j]) > 1.5-jet_rad) continue;
 	  if(tjet_pt[j] > ltjpt)
 	    {
+	      stjpt = ltjpt;
+	      tsji = tlji;
 	      ltjpt = tjet_pt[j];
 	      tlji = j;
+	    }
+	  else if(tjet_pt[j] > stjpt)
+	    {
+	      stjpt = tjet_pt[j];
+	      tsji = j;
 	    }
 	}
       
@@ -739,6 +761,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       if(jet_pt[lji] > recojet_pt_max) continue;
 
       bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]<0.3;
+      bool truthdijetcut = !check_dphicut(tjet_phi[tlji],tjet_phi[tsji]) || tjet_e[tsji]/tjet_e[tlji]<0.3;
       
       bgdj = dijetcut;
 
@@ -819,21 +842,69 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 	  if(calibjet_pt_wbg[k] > 30 && jet_pt[k] < 45) h_recojet_eta_3045->Fill(calibjet_eta_wbg[k]);
 	  if(calibjet_pt_wbg.at(k) > l/* && calibjet_matched_wbg.at(k) >= 0*/) l = calibjet_pt_wbg.at(k);
 	}
-      if(!bgnj && l>0 && l<calibjet_pt_max)
+
+      if(!bgnj && ltjpt > 0)
 	{
-	  
-	  zvtx!=0?h_calib_all->Fill(l,zvtx):h_calib_all->Fill(l,-999);
-	  if(!bgdj)
+	  h_truthm_all->Fill(ltjpt,zvtx==0?-999:zvtx,tzvtx);
+	  if(!truthdijetcut)
 	    {
-	      zvtx!=0?h_calib_dijet_all->Fill(l,zvtx):h_calib_dijet_all->Fill(l,-999);
+	      h_truthm_dijet_all->Fill(ltjpt,zvtx==0?-999:zvtx,tzvtx);
 	      if(has_zvtx)
 		{
-		  zvtx!=0?h_calib_mbd_and_dijet->Fill(l,zvtx):h_calib_mbd_and_dijet->Fill(l,-999);
+		  h_truthm_mbd_and_dijet->Fill(ltjpt,zvtx==0?-999:zvtx,tzvtx);
 		}
 	    }
 	  if(has_zvtx)
 	    {
-	      zvtx!=0?h_calib_mbd_all->Fill(l,zvtx):h_calib_mbd_all->Fill(l,-999);
+	      h_truthm_mbd_all->Fill(ltjpt,zvtx==0?-999:zvtx,tzvtx);
+	    }
+	}
+
+      if(ljpt > 25 && ljpt < 30)
+	{
+	  if(bgdj)
+	    {
+	      if(has_zvtx)
+		{
+		  h_dijet_vs_mbd->Fill(0.,1);
+		}
+	      else
+		{
+		  h_dijet_vs_mbd->Fill(0.,0);
+		}
+	    }
+	  else
+	    {
+	      if(has_zvtx)
+		{
+		  h_dijet_vs_mbd->Fill(1,1);
+		}
+	      else
+		{
+		  h_dijet_vs_mbd->Fill(1,0);
+		}
+	    }
+	}
+      
+      if(!bgnj && l>0 && l<calibjet_pt_max)
+	{
+	  
+	  zvtx!=0?h_calib_all->Fill(l,zvtx,tzvtx):h_calib_all->Fill(l,-999,tzvtx);
+	  zvtx!=0?h_uncalib_all->Fill(ljpt,zvtx,tzvtx):h_uncalib_all->Fill(ljpt,-999,tzvtx);
+	  if(!bgdj)
+	    {
+	      zvtx!=0?h_calib_dijet_all->Fill(l,zvtx,tzvtx):h_calib_dijet_all->Fill(l,-999,tzvtx);
+	      zvtx!=0?h_uncalib_dijet_all->Fill(ljpt,zvtx,tzvtx):h_uncalib_dijet_all->Fill(ljpt,-999,tzvtx);
+	      if(has_zvtx)
+		{
+		  zvtx!=0?h_calib_mbd_and_dijet->Fill(l,zvtx,tzvtx):h_calib_mbd_and_dijet->Fill(l,-999,tzvtx);
+		  zvtx!=0?h_uncalib_mbd_and_dijet->Fill(ljpt,zvtx,tzvtx):h_uncalib_mbd_and_dijet->Fill(ljpt,-999,tzvtx);
+		}
+	    }
+	  if(has_zvtx)
+	    {
+	      zvtx!=0?h_calib_mbd_all->Fill(l,zvtx,tzvtx):h_calib_mbd_all->Fill(l,-999,tzvtx);
+	      zvtx!=0?h_uncalib_mbd_all->Fill(ljpt,zvtx,tzvtx):h_uncalib_mbd_all->Fill(ljpt,-999,tzvtx);
 	    }
 	}
 
@@ -1124,6 +1195,11 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   h_calib_dijet_all->Write();
   h_calib_mbd_and_dijet->Write();
 
+  h_uncalib_all->Write();
+  h_uncalib_mbd_all->Write();
+  h_uncalib_dijet_all->Write();
+  h_uncalib_mbd_and_dijet->Write();
+
   h_recojet_eta_3045->Write();
   h_truthjet_eta_3045->Write();
 
@@ -1139,6 +1215,8 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   */
   
   h_tz_teta->Write();
+  h_dijet_vs_mbd->Write();
+  
   /*
   h_nzz_tz_E_truth_fail->Write();
   h_zz_tz_E_truth_fail->Write();

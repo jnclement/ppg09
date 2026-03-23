@@ -100,6 +100,7 @@ void get_unfolded_spectrum(TH2DBootstrap* h_respmatrix, TH1DBootstrap* h_spectru
     }
 
   h_unfolded = new TH1DBootstrap(hist_name.c_str(), hist_name.c_str(), h_unfolded_nom, h_unfolded_rep, nrep);
+  h_unfolded->SetErrBootstrapRMS();
   for(int i=0; i<nrep; ++i)
     {
       delete h_truth_rep[i];

@@ -151,7 +151,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   float jet_pt_calib[100];
   int jet_n;
   int calib_jet_n;
-
+  float ljct, sjct;
   if(jet_radius_index == 4)
     {
       chain.SetBranchAddress("zvtx",&zvtx);
@@ -181,6 +181,9 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
       chain.SetBranchAddress(("calib_r0"+to_string(jet_radius_index)+"_jet_n").c_str(),&calib_jet_n);
     }
 
+  chain.SetBranchAddress("ljct",&ljct);
+  chain.SetBranchAddress("sjct",&sjct);
+
   TFile* fjt = TFile::Open("output_jetefficiency.root","READ");
   TF1* jt[3];
   jt[0] = (TF1*)fjt->Get(("jettrig_0"+to_string(jet_radius_index)+"_pt_nominal").c_str());
@@ -209,6 +212,9 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
 
   TH1D *h_calibjet_pt_record_all_noweight = new TH1D("h_calibjet_pt_record_all_noweight", ";p_{T} [GeV]", 1000, 0, 100);
+
+  TH1D* h_recojet_haszvtx_pt_record_lead_all = new TH1D("h_recojet_haszvtx_pt_record_lead_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D* h_recojet_all_pt_record_lead_all = new TH1D("h_recojet_all_pt_record_lead_all", ";p_{T} [GeV]", 1000, 0, 100);
 
   TH1DBootstrap *h_calibjet_pt_all = new TH1DBootstrap("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
   TH1DBootstrap *h_calibjet_pt_all_jetup = new TH1DBootstrap("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
@@ -252,6 +258,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
       z30 = abs(zvtx) < 30 && zvtx!=0;
       z60 = abs(zvtx) < 60 && zvtx!=0;
       if(abs(zvtx)>990) zvtx = 0;
+      bool has_zvtx = std::isfinite(zvtx) && zvtx != 0;
 
       bgdj = false;
       bgnj = false;
@@ -262,7 +269,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
       if(lji < 0) continue;
 
       bool dijetcut = !check_dphicut(jet_phi[lji],jet_phi[sji]) || jet_e[sji]/jet_e[lji]<0.3 || sji < 0;
-      bool tcut = abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]*17.6-jet_t[sji]*17.6)>3;
+      bool tcut = abs(ljct - sjct)>3 || abs(ljct) > 6;//abs(jet_t[lji]*17.6+2)>6 || abs(jet_t[lji]*17.6-jet_t[sji]*17.6)>3;
 
       bgdj = tcut || dijetcut;
 
@@ -291,10 +298,11 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
       double maxeff = 0.95;
       filter_jets(jet_filter, jet_e, jet_pt, jet_eta, zvtx, jet_n);
       bsgen->Generate(iseg,i);
+      float ljecpt = 0;
       for(int j=0; j<jet_filter.size(); ++j)
 	{
 	  if(jet_filter.at(j)) continue;
-
+	  if(jet_pt[j] > ljecpt) ljecpt = jet_pt[j];
 	  h_recojet_pt_record_nocut_all->Fill(jet_pt[j]);
 	  if(!bgnj && !bgdj) h_recojet_pt_record_all->Fill(jet_pt[j]);
 
@@ -310,6 +318,10 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 	    }
 	}
       if(bgnj || bgdj) continue;
+
+      if(has_zvtx) h_recojet_haszvtx_pt_record_lead_all->Fill(ljecpt);
+      h_recojet_all_pt_record_lead_all->Fill(ljecpt);
+      
       h_event_passed->Fill(0.5);
       for(int j=0; j<jet_n; ++j)
 	{
@@ -354,6 +366,11 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   TFile* outf = TFile::Open(("output/output_"+to_string(iseg)+"_r0"+to_string(jet_radius_index)+".root").c_str(),"RECREATE");
   outf->cd();
 
+
+  h_recojet_haszvtx_pt_record_lead_all->Write();
+  h_recojet_all_pt_record_lead_all->Write();
+
+  
   h_recojet_pt_record_nocut_all->Write();
   h_recojet_pt_record_all->Write();
 

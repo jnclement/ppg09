@@ -195,7 +195,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 
   const int nrep = 100;
 
-  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep);
+  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep,iseg);
   
   TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
   TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
@@ -290,7 +290,7 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 
       double maxeff = 0.95;
       filter_jets(jet_filter, jet_e, jet_pt, jet_eta, zvtx, jet_n);
-
+      bsgen->Generate(iseg,i);
       for(int j=0; j<jet_filter.size(); ++j)
 	{
 	  if(jet_filter.at(j)) continue;

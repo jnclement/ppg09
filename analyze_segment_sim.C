@@ -344,7 +344,7 @@ void get_truthjet(std::vector<float>& goodtruthjet_pt, std::vector<float>& goodt
 int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 {
   const int nrep = 100;
-  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep);
+  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep,iseg);
   double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000, calibjet_pt_max = 1000;
   jet_rad = 0.1*radius_index;
   if (runtype == "mb")
@@ -732,6 +732,7 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
       float ltjpt = -9999;
       int tsji = -1;
       float stjpt = -9999;
+      bsgen->Generate(iseg,i);
       for(int j=0; j<tjet_n; ++j)
 	{
 	  if(tjet_pt[j] > 30 && tjet_pt[j] < 45) h_truthjet_eta_3045->Fill(tjet_eta[j]);	      

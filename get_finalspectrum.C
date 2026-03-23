@@ -202,14 +202,14 @@ void get_finalspectrum(float jet_radius = 0.4) {
   }
 
 
-  TH1D* h_unfold_all = (TH1D*)f_spectrum->Get("h_unfold_all"); do_normalization(h_unfold_all, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jesup = (TH1D*)f_spectrum->Get("h_unfold_all_jesup"); do_normalization(h_unfold_all_jesup, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jesdown = (TH1D*)f_spectrum->Get("h_unfold_all_jesdown"); do_normalization(h_unfold_all_jesdown, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jerup = (TH1D*)f_spectrum->Get("h_unfold_all_jerup"); do_normalization(h_unfold_all_jerup, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jerdown = (TH1D*)f_spectrum->Get("h_unfold_all_jerdown"); do_normalization(h_unfold_all_jerdown, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jetup = (TH1D*)f_spectrum->Get("h_unfold_all_jetup"); do_normalization(h_unfold_all_jetup, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_jetdown = (TH1D*)f_spectrum->Get("h_unfold_all_jetdown"); do_normalization(h_unfold_all_jetdown, luminosity22_all, h_etacorrection, jet_radius);
-  TH1D* h_unfold_all_unfoldunc = (TH1D*)f_spectrum->Get("h_unfold_all_unfoldunc"); do_normalization(h_unfold_all_unfoldunc, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all"))->GetNominal(); do_normalization(h_unfold_all, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jesup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jesup"))->GetNominal(); do_normalization(h_unfold_all_jesup, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jesdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jesdown"))->GetNominal(); do_normalization(h_unfold_all_jesdown, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jerup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jerup"))->GetNominal(); do_normalization(h_unfold_all_jerup, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jerdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jerdown"))->GetNominal(); do_normalization(h_unfold_all_jerdown, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jetup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jetup"))->GetNominal(); do_normalization(h_unfold_all_jetup, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_jetdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_jetdown"))->GetNominal(); do_normalization(h_unfold_all_jetdown, luminosity22_all, h_etacorrection, jet_radius);
+  TH1D* h_unfold_all_unfoldunc = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_all_unfoldunc"))->GetNominal(); do_normalization(h_unfold_all_unfoldunc, luminosity22_all, h_etacorrection, jet_radius);
   TH1D* h_uncertainty_all_stat = get_statistical_uncertainty(h_unfold_all, "h_uncertainty_all_stat");
   TH1D* h_uncertainty_all_jesup, *h_uncertainty_all_jesdown; get_uncertainty(h_uncertainty_all_jesup, h_uncertainty_all_jesdown, h_unfold_all, h_unfold_all_jesup, h_unfold_all_jesdown, "h_uncertainty_all_jes");
   TH1D* h_uncertainty_all_jerup, *h_uncertainty_all_jerdown; get_uncertainty(h_uncertainty_all_jerup, h_uncertainty_all_jerdown, h_unfold_all, h_unfold_all_jerup, h_unfold_all_jerdown, "h_uncertainty_all_jer");
@@ -219,16 +219,16 @@ void get_finalspectrum(float jet_radius = 0.4) {
   std::vector<TH1D*> h_uncertainty_all_down = {h_uncertainty_all_jesdown, h_uncertainty_all_jerdown, h_uncertainty_all_jetdown, h_uncertainty_all_unfolddown};
   TH1D* h_uncertainty_all_total_up, *h_uncertainty_all_total_down; get_total_uncertainty(h_uncertainty_all_total_up, h_uncertainty_all_total_down, h_uncertainty_all_stat, h_uncertainty_all_up, h_uncertainty_all_down);
 
-  TH1D* h_unfold_zvertex30 = (TH1D*)f_spectrum->Get("h_unfold_zvertex30"); do_normalization(h_unfold_zvertex30, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jesup = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jesup"); do_normalization(h_unfold_zvertex30_jesup, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jesdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jesdown"); do_normalization(h_unfold_zvertex30_jesdown, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jerup = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jerup"); do_normalization(h_unfold_zvertex30_jerup, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jerdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jerdown"); do_normalization(h_unfold_zvertex30_jerdown, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jetup = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jetup"); do_normalization(h_unfold_zvertex30_jetup, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_jetdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_jetdown"); do_normalization(h_unfold_zvertex30_jetdown, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_mbdup = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_mbdup"); do_normalization(h_unfold_zvertex30_mbdup, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_mbddown = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_mbddown"); do_normalization(h_unfold_zvertex30_mbddown, luminosity22_30, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex30_unfoldunc = (TH1D*)f_spectrum->Get("h_unfold_zvertex30_unfoldunc"); do_normalization(h_unfold_zvertex30_unfoldunc, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30 = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30"))->GetNominal(); do_normalization(h_unfold_zvertex30, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jesup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jesup"))->GetNominal(); do_normalization(h_unfold_zvertex30_jesup, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jesdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jesdown"))->GetNominal(); do_normalization(h_unfold_zvertex30_jesdown, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jerup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jerup"))->GetNominal(); do_normalization(h_unfold_zvertex30_jerup, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jerdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jerdown"))->GetNominal(); do_normalization(h_unfold_zvertex30_jerdown, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jetup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jetup"))->GetNominal(); do_normalization(h_unfold_zvertex30_jetup, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_jetdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_jetdown"))->GetNominal(); do_normalization(h_unfold_zvertex30_jetdown, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_mbdup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_mbdup"))->GetNominal(); do_normalization(h_unfold_zvertex30_mbdup, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_mbddown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_mbddown"))->GetNominal(); do_normalization(h_unfold_zvertex30_mbddown, luminosity22_30, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex30_unfoldunc = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex30_unfoldunc"))->GetNominal(); do_normalization(h_unfold_zvertex30_unfoldunc, luminosity22_30, h_etacorrection, jet_radius);
   TH1D* h_uncertainty_zvertex30_stat = get_statistical_uncertainty(h_unfold_zvertex30, "h_uncertainty_zvertex30_stat");
   TH1D* h_uncertainty_zvertex30_jesup, *h_uncertainty_zvertex30_jesdown; get_uncertainty(h_uncertainty_zvertex30_jesup, h_uncertainty_zvertex30_jesdown, h_unfold_zvertex30, h_unfold_zvertex30_jesup, h_unfold_zvertex30_jesdown, "h_uncertainty_zvertex30_jes");
   TH1D* h_uncertainty_zvertex30_jerup, *h_uncertainty_zvertex30_jerdown; get_uncertainty(h_uncertainty_zvertex30_jerup, h_uncertainty_zvertex30_jerdown, h_unfold_zvertex30, h_unfold_zvertex30_jerup, h_unfold_zvertex30_jerdown, "h_uncertainty_zvertex30_jer");
@@ -239,17 +239,17 @@ void get_finalspectrum(float jet_radius = 0.4) {
   std::vector<TH1D*> h_uncertainty_zvertex30_down = {h_uncertainty_zvertex30_jesdown, h_uncertainty_zvertex30_jerdown, h_uncertainty_zvertex30_jetdown, h_uncertainty_zvertex30_mbddown, h_uncertainty_zvertex30_unfolddown};
   TH1D* h_uncertainty_zvertex30_total_up, *h_uncertainty_zvertex30_total_down; get_total_uncertainty(h_uncertainty_zvertex30_total_up, h_uncertainty_zvertex30_total_down, h_uncertainty_zvertex30_stat, h_uncertainty_zvertex30_up, h_uncertainty_zvertex30_down);
 
-  TH1D* h_unfold_zvertex60 = (TH1D*)f_spectrum->Get("h_unfold_zvertex60"); do_normalization(h_unfold_zvertex60, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60 = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60"))->GetNominal(); do_normalization(h_unfold_zvertex60, luminosity22_60, h_etacorrection, jet_radius);
   TFile *f_output_check = new TFile(Form("output_final_spectrum_check_r0%d.root", (int)(10*jet_radius)), "RECREATE"); h_unfold_zvertex60->Write(); f_output_check->Close();
-  TH1D* h_unfold_zvertex60_jesup = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jesup"); do_normalization(h_unfold_zvertex60_jesup, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_jesdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jesdown"); do_normalization(h_unfold_zvertex60_jesdown, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_jerup = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jerup"); do_normalization(h_unfold_zvertex60_jerup, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_jerdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jerdown"); do_normalization(h_unfold_zvertex60_jerdown, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_jetup = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jetup"); do_normalization(h_unfold_zvertex60_jetup, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_jetdown = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_jetdown"); do_normalization(h_unfold_zvertex60_jetdown, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_mbdup = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_mbdup"); do_normalization(h_unfold_zvertex60_mbdup, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_mbddown = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_mbddown"); do_normalization(h_unfold_zvertex60_mbddown, luminosity22_60, h_etacorrection, jet_radius);
-  TH1D* h_unfold_zvertex60_unfoldunc = (TH1D*)f_spectrum->Get("h_unfold_zvertex60_unfoldunc"); do_normalization(h_unfold_zvertex60_unfoldunc, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jesup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jesup"))->GetNominal(); do_normalization(h_unfold_zvertex60_jesup, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jesdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jesdown"))->GetNominal(); do_normalization(h_unfold_zvertex60_jesdown, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jerup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jerup"))->GetNominal(); do_normalization(h_unfold_zvertex60_jerup, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jerdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jerdown"))->GetNominal(); do_normalization(h_unfold_zvertex60_jerdown, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jetup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jetup"))->GetNominal(); do_normalization(h_unfold_zvertex60_jetup, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_jetdown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_jetdown"))->GetNominal(); do_normalization(h_unfold_zvertex60_jetdown, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_mbdup = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_mbdup"))->GetNominal(); do_normalization(h_unfold_zvertex60_mbdup, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_mbddown = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_mbddown"))->GetNominal(); do_normalization(h_unfold_zvertex60_mbddown, luminosity22_60, h_etacorrection, jet_radius);
+  TH1D* h_unfold_zvertex60_unfoldunc = (TH1D*)((TH1DBootstrap*)f_spectrum->Get("h_unfold_zvertex60_unfoldunc"))->GetNominal(); do_normalization(h_unfold_zvertex60_unfoldunc, luminosity22_60, h_etacorrection, jet_radius);
   TH1D* h_uncertainty_zvertex60_stat = get_statistical_uncertainty(h_unfold_zvertex60, "h_uncertainty_zvertex60_stat");
   TH1D* h_uncertainty_zvertex60_jesup,* h_uncertainty_zvertex60_jesdown; get_uncertainty(h_uncertainty_zvertex60_jesup, h_uncertainty_zvertex60_jesdown, h_unfold_zvertex60, h_unfold_zvertex60_jesup, h_unfold_zvertex60_jesdown, "h_uncertainty_zvertex60_jes");
   TH1D* h_uncertainty_zvertex60_jerup,* h_uncertainty_zvertex60_jerdown; get_uncertainty(h_uncertainty_zvertex60_jerup, h_uncertainty_zvertex60_jerdown, h_unfold_zvertex60, h_unfold_zvertex60_jerup, h_unfold_zvertex60_jerdown, "h_uncertainty_zvertex60_jer");

@@ -1,6 +1,11 @@
 #include "unfold_Def.h"
 #include "TRandom.h"
 #include "TRandom3.h"
+R__LOAD_LIBRARY(libBootstrapGenerator.so)
+#include "BootstrapGenerator/BootstrapGenerator.h"
+#include "BootstrapGenerator/TH1DBootstrap.h"
+#include "BootstrapGenerator/TH2DBootstrap.h"
+
 TRandom3 randGen(1234);
 
 float min_dphi = 3*M_PI/4;
@@ -244,7 +249,7 @@ void match_reco_truth(std::vector<float>& reco_eta, std::vector<float>& reco_phi
   */
 }
 
-void fill_response_matrix(TH1D*& h_truth, TH1D*& h_reco, TH2D*& h_resp, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchtruth_rec, TH1D*& h_matchtruth_unw, TH1D*& h_reco_unw, double scale, TF1* f_reweight, std::vector<float>& reco_pt, std::vector<float>& reco_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched)
+void fill_response_matrix(TH1DBootstrap*& h_truth, TH1DBootstrap*& h_reco, TH2DBootstrap*& h_resp, TH1DBootstrap*& h_fake, TH1DBootstrap*& h_miss, TH1DBootstrap*& h_matchtruth_rec, TH1DBootstrap*& h_matchtruth_unw, TH1DBootstrap*& h_reco_unw, double scale, TF1* f_reweight, std::vector<float>& reco_pt, std::vector<float>& reco_matched, std::vector<float>& truth_pt, std::vector<float>& truth_matched)
 {
   
   for (int im = 0; im < reco_pt.size(); ++im)
@@ -288,16 +293,16 @@ void fill_response_matrix(TH1D*& h_truth, TH1D*& h_reco, TH2D*& h_resp, TH1D*& h
     }
 }
 
-void build_hist(std::string tag, TH1D*& h_truth, TH1D*& h_measure, TH2D*& h_respmatrix, TH1D*& h_fake, TH1D*& h_miss, TH1D*& h_matchedtruth_weighted, TH1D*& h_matchedtruth_unweighted, TH1D*& h_measure_unweighted)
+void build_hist(std::string tag, TH1DBootstrap*& h_truth, TH1DBootstrap*& h_measure, TH2DBootstrap*& h_respmatrix, TH1DBootstrap*& h_fake, TH1DBootstrap*& h_miss, TH1DBootstrap*& h_matchedtruth_weighted, TH1DBootstrap*& h_matchedtruth_unweighted, TH1DBootstrap*& h_measure_unweighted, BootstrapGenerator* bsgen, int nrep)
 {
-  h_truth = new TH1D(Form("h_truth_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
-  h_measure = new TH1D(Form("h_measure_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  h_respmatrix = new TH2D(Form("h_respmatrix_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
-  h_fake = new TH1D(Form("h_fake_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  h_miss = new TH1D(Form("h_miss_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
-  h_matchedtruth_weighted = new TH1D(Form("h_matchedtruth_weighted_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", 1000, 0, 100);
-  h_matchedtruth_unweighted = new TH1D(Form("h_matchedtruth_unweighted_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", 1000, 0, 100);
-  h_measure_unweighted = new TH1D(Form("h_measure_unweighted_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", 1000, 0, 100);
+  h_truth = new TH1DBootstrap(Form("h_truth_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
+  h_measure = new TH1DBootstrap(Form("h_measure_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  h_respmatrix = new TH2DBootstrap(Form("h_respmatrix_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins, nrep, bsgen);
+  h_fake = new TH1DBootstrap(Form("h_fake_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  h_miss = new TH1DBootstrap(Form("h_miss_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
+  h_matchedtruth_weighted = new TH1DBootstrap(Form("h_matchedtruth_weighted_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", 100, 0, 100, 10, bsgen);
+  h_matchedtruth_unweighted = new TH1DBootstrap(Form("h_matchedtruth_unweighted_%s", tag.c_str()), ";p_{T}^{Truth jet} [GeV]", 100, 0, 100, 10, bsgen);
+  h_measure_unweighted = new TH1DBootstrap(Form("h_measure_unweighted_%s", tag.c_str()), ";p_{T}^{Calib jet} [GeV]", 100, 0, 100, 10, bsgen);
 }
 
 
@@ -338,7 +343,8 @@ void get_truthjet(std::vector<float>& goodtruthjet_pt, std::vector<float>& goodt
   
 int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 {
-
+  const int nrep = 100;
+  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep);
   double truthjet_pt_min = 0, truthjet_pt_max = 1000, recojet_pt_max = 1000, calibjet_pt_max = 1000;
   jet_rad = 0.1*radius_index;
   if (runtype == "mb")
@@ -552,13 +558,13 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
   TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
   TH1D *h_event_passed = new TH1D("h_event_passed", ";Event Number", 1, 0, 1);
-  TH1D *h_recojet_pt_record_nocut_all = new TH1D("h_recojet_pt_record_nocut_all", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_recojet_pt_record_all = new TH1D("h_recojet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_recojet_pt_record_nocut_zvertex30 = new TH1D("h_recojet_pt_record_nocut_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_truthjet_pt_record_all = new TH1D("h_truthjet_pt_record_all", ";p_{T}^{Truth jet} [GeV]", 1000,0,100);
+  TH1D *h_recojet_pt_record_nocut_all = new TH1D("h_recojet_pt_record_nocut_all", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_recojet_pt_record_all = new TH1D("h_recojet_pt_record_all", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex30 = new TH1D("h_recojet_pt_record_nocut_zvertex30", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_truthjet_pt_record_all = new TH1D("h_truthjet_pt_record_all", ";p_{T}^{Truth jet} [GeV]", 100,0,100);
   // Nominal histograms
 
   TH3D* h_calib_dijet_all = new TH3D("h_calib_dijet_all",";Leading p_{T}^{calib} [GeV];z_{MBD} [cm];z_{truth} [cm]",100,0,100,210,-105,105,210,-105,105);
@@ -588,94 +594,94 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
   TH2D* h_tz_teta = new TH2D("h_tz_teta",";z_{truth} [cm];#eta_{truth}",300,-150,150,50,-2.5,2.5);
 
   
-  TH2D *h_respmatrix_all; TH1D *h_truth_all, *h_measure_all, *h_fake_all, *h_miss_all, *h_matchedtruth_weighted_all, *h_matchedtruth_unweighted_all, *h_measure_unweighted_all;
-  build_hist("all", h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all, h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all);
+  TH2DBootstrap *h_respmatrix_all; TH1DBootstrap *h_truth_all, *h_measure_all, *h_fake_all, *h_miss_all, *h_matchedtruth_weighted_all, *h_matchedtruth_unweighted_all, *h_measure_unweighted_all;
+  build_hist("all", h_truth_all, h_measure_all, h_respmatrix_all, h_fake_all, h_miss_all, h_matchedtruth_weighted_all, h_matchedtruth_unweighted_all, h_measure_unweighted_all, bsgen, nrep);
 
-  TH2D *h_respmatrix_all_nosmear; TH1D *h_truth_all_nosmear, *h_measure_all_nosmear, *h_fake_all_nosmear, *h_miss_all_nosmear, *h_matchedtruth_weighted_all_nosmear, *h_matchedtruth_unweighted_all_nosmear, *h_measure_unweighted_all_nosmear;
-  build_hist("all_nosmear", h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear, h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear);
+  TH2DBootstrap *h_respmatrix_all_nosmear; TH1DBootstrap *h_truth_all_nosmear, *h_measure_all_nosmear, *h_fake_all_nosmear, *h_miss_all_nosmear, *h_matchedtruth_weighted_all_nosmear, *h_matchedtruth_unweighted_all_nosmear, *h_measure_unweighted_all_nosmear;
+  build_hist("all_nosmear", h_truth_all_nosmear, h_measure_all_nosmear, h_respmatrix_all_nosmear, h_fake_all_nosmear, h_miss_all_nosmear, h_matchedtruth_weighted_all_nosmear, h_matchedtruth_unweighted_all_nosmear, h_measure_unweighted_all_nosmear, bsgen, nrep);
 
-  TH2D *h_respmatrix_zvertex60_nosmear; TH1D *h_truth_zvertex60_nosmear, *h_measure_zvertex60_nosmear, *h_fake_zvertex60_nosmear, *h_miss_zvertex60_nosmear, *h_matchedtruth_weighted_zvertex60_nosmear, *h_matchedtruth_unweighted_zvertex60_nosmear, *h_measure_unweighted_zvertex60_nosmear;
-  build_hist("zvertex60_nosmear", h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear, h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear);
-
-
+  TH2DBootstrap *h_respmatrix_zvertex60_nosmear; TH1DBootstrap *h_truth_zvertex60_nosmear, *h_measure_zvertex60_nosmear, *h_fake_zvertex60_nosmear, *h_miss_zvertex60_nosmear, *h_matchedtruth_weighted_zvertex60_nosmear, *h_matchedtruth_unweighted_zvertex60_nosmear, *h_measure_unweighted_zvertex60_nosmear;
+  build_hist("zvertex60_nosmear", h_truth_zvertex60_nosmear, h_measure_zvertex60_nosmear, h_respmatrix_zvertex60_nosmear, h_fake_zvertex60_nosmear, h_miss_zvertex60_nosmear, h_matchedtruth_weighted_zvertex60_nosmear, h_matchedtruth_unweighted_zvertex60_nosmear, h_measure_unweighted_zvertex60_nosmear, bsgen, nrep);
 
 
-  TH2D *h_respmatrix_nozvtx_nosmear; TH1D *h_truth_nozvtx_nosmear, *h_measure_nozvtx_nosmear, *h_fake_nozvtx_nosmear, *h_miss_nozvtx_nosmear, *h_matchedtruth_weighted_nozvtx_nosmear, *h_matchedtruth_unweighted_nozvtx_nosmear, *h_measure_unweighted_nozvtx_nosmear;
-  build_hist("nozvtx_nosmear", h_truth_nozvtx_nosmear, h_measure_nozvtx_nosmear, h_respmatrix_nozvtx_nosmear, h_fake_nozvtx_nosmear, h_miss_nozvtx_nosmear, h_matchedtruth_weighted_nozvtx_nosmear, h_matchedtruth_unweighted_nozvtx_nosmear, h_measure_unweighted_nozvtx_nosmear);
+
+
+  TH2DBootstrap *h_respmatrix_nozvtx_nosmear; TH1DBootstrap *h_truth_nozvtx_nosmear, *h_measure_nozvtx_nosmear, *h_fake_nozvtx_nosmear, *h_miss_nozvtx_nosmear, *h_matchedtruth_weighted_nozvtx_nosmear, *h_matchedtruth_unweighted_nozvtx_nosmear, *h_measure_unweighted_nozvtx_nosmear;
+  build_hist("nozvtx_nosmear", h_truth_nozvtx_nosmear, h_measure_nozvtx_nosmear, h_respmatrix_nozvtx_nosmear, h_fake_nozvtx_nosmear, h_miss_nozvtx_nosmear, h_matchedtruth_weighted_nozvtx_nosmear, h_matchedtruth_unweighted_nozvtx_nosmear, h_measure_unweighted_nozvtx_nosmear, bsgen, nrep);
   
   
 
   
-  TH2D *h_respmatrix_zvertex30; TH1D *h_truth_zvertex30, *h_measure_zvertex30, *h_fake_zvertex30, *h_miss_zvertex30, *h_matchedtruth_weighted_zvertex30, *h_matchedtruth_unweighted_zvertex30, *h_measure_unweighted_zvertex30;
-  build_hist("zvertex30", h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30, h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30);
-  TH2D *h_respmatrix_zvertex60; TH1D *h_truth_zvertex60, *h_measure_zvertex60, *h_fake_zvertex60, *h_miss_zvertex60, *h_matchedtruth_weighted_zvertex60, *h_matchedtruth_unweighted_zvertex60, *h_measure_unweighted_zvertex60;
-  build_hist("zvertex60", h_truth_zvertex60, h_measure_zvertex60, h_respmatrix_zvertex60, h_fake_zvertex60, h_miss_zvertex60, h_matchedtruth_weighted_zvertex60, h_matchedtruth_unweighted_zvertex60, h_measure_unweighted_zvertex60);
+  TH2DBootstrap *h_respmatrix_zvertex30; TH1DBootstrap *h_truth_zvertex30, *h_measure_zvertex30, *h_fake_zvertex30, *h_miss_zvertex30, *h_matchedtruth_weighted_zvertex30, *h_matchedtruth_unweighted_zvertex30, *h_measure_unweighted_zvertex30;
+  build_hist("zvertex30", h_truth_zvertex30, h_measure_zvertex30, h_respmatrix_zvertex30, h_fake_zvertex30, h_miss_zvertex30, h_matchedtruth_weighted_zvertex30, h_matchedtruth_unweighted_zvertex30, h_measure_unweighted_zvertex30, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60; TH1DBootstrap *h_truth_zvertex60, *h_measure_zvertex60, *h_fake_zvertex60, *h_miss_zvertex60, *h_matchedtruth_weighted_zvertex60, *h_matchedtruth_unweighted_zvertex60, *h_measure_unweighted_zvertex60;
+  build_hist("zvertex60", h_truth_zvertex60, h_measure_zvertex60, h_respmatrix_zvertex60, h_fake_zvertex60, h_miss_zvertex60, h_matchedtruth_weighted_zvertex60, h_matchedtruth_unweighted_zvertex60, h_measure_unweighted_zvertex60, bsgen, nrep);
 
   // JES up/down histograms
-  TH2D *h_respmatrix_all_jesup; TH1D *h_truth_all_jesup, *h_measure_all_jesup, *h_fake_all_jesup, *h_miss_all_jesup, *h_matchedtruth_weighted_all_jesup, *h_matchedtruth_unweighted_all_jesup, *h_measure_unweighted_all_jesup;
-  build_hist("all_jesup", h_truth_all_jesup, h_measure_all_jesup, h_respmatrix_all_jesup, h_fake_all_jesup, h_miss_all_jesup, h_matchedtruth_weighted_all_jesup, h_matchedtruth_unweighted_all_jesup, h_measure_unweighted_all_jesup);
-  TH2D *h_respmatrix_all_jesdown; TH1D *h_truth_all_jesdown, *h_measure_all_jesdown, *h_fake_all_jesdown, *h_miss_all_jesdown, *h_matchedtruth_weighted_all_jesdown, *h_matchedtruth_unweighted_all_jesdown, *h_measure_unweighted_all_jesdown;
-  build_hist("all_jesdown", h_truth_all_jesdown, h_measure_all_jesdown, h_respmatrix_all_jesdown, h_fake_all_jesdown, h_miss_all_jesdown, h_matchedtruth_weighted_all_jesdown, h_matchedtruth_unweighted_all_jesdown, h_measure_unweighted_all_jesdown);
-  TH2D *h_respmatrix_zvertex30_jesup; TH1D *h_truth_zvertex30_jesup, *h_measure_zvertex30_jesup, *h_fake_zvertex30_jesup, *h_miss_zvertex30_jesup, *h_matchedtruth_weighted_zvertex30_jesup, *h_matchedtruth_unweighted_zvertex30_jesup, *h_measure_unweighted_zvertex30_jesup;
-  build_hist("zvertex30_jesup", h_truth_zvertex30_jesup, h_measure_zvertex30_jesup, h_respmatrix_zvertex30_jesup, h_fake_zvertex30_jesup, h_miss_zvertex30_jesup, h_matchedtruth_weighted_zvertex30_jesup, h_matchedtruth_unweighted_zvertex30_jesup, h_measure_unweighted_zvertex30_jesup);
-  TH2D *h_respmatrix_zvertex30_jesdown; TH1D *h_truth_zvertex30_jesdown, *h_measure_zvertex30_jesdown, *h_fake_zvertex30_jesdown, *h_miss_zvertex30_jesdown, *h_matchedtruth_weighted_zvertex30_jesdown, *h_matchedtruth_unweighted_zvertex30_jesdown, *h_measure_unweighted_zvertex30_jesdown;
-  build_hist("zvertex30_jesdown", h_truth_zvertex30_jesdown, h_measure_zvertex30_jesdown, h_respmatrix_zvertex30_jesdown, h_fake_zvertex30_jesdown, h_miss_zvertex30_jesdown, h_matchedtruth_weighted_zvertex30_jesdown, h_matchedtruth_unweighted_zvertex30_jesdown, h_measure_unweighted_zvertex30_jesdown);
-  TH2D *h_respmatrix_zvertex60_jesup; TH1D *h_truth_zvertex60_jesup, *h_measure_zvertex60_jesup, *h_fake_zvertex60_jesup, *h_miss_zvertex60_jesup, *h_matchedtruth_weighted_zvertex60_jesup, *h_matchedtruth_unweighted_zvertex60_jesup, *h_measure_unweighted_zvertex60_jesup;
-  build_hist("zvertex60_jesup", h_truth_zvertex60_jesup, h_measure_zvertex60_jesup, h_respmatrix_zvertex60_jesup, h_fake_zvertex60_jesup, h_miss_zvertex60_jesup, h_matchedtruth_weighted_zvertex60_jesup, h_matchedtruth_unweighted_zvertex60_jesup, h_measure_unweighted_zvertex60_jesup);
-  TH2D *h_respmatrix_zvertex60_jesdown; TH1D *h_truth_zvertex60_jesdown, *h_measure_zvertex60_jesdown, *h_fake_zvertex60_jesdown, *h_miss_zvertex60_jesdown, *h_matchedtruth_weighted_zvertex60_jesdown, *h_matchedtruth_unweighted_zvertex60_jesdown, *h_measure_unweighted_zvertex60_jesdown;
-  build_hist("zvertex60_jesdown", h_truth_zvertex60_jesdown, h_measure_zvertex60_jesdown, h_respmatrix_zvertex60_jesdown, h_fake_zvertex60_jesdown, h_miss_zvertex60_jesdown, h_matchedtruth_weighted_zvertex60_jesdown, h_matchedtruth_unweighted_zvertex60_jesdown, h_measure_unweighted_zvertex60_jesdown);
+  TH2DBootstrap *h_respmatrix_all_jesup; TH1DBootstrap *h_truth_all_jesup, *h_measure_all_jesup, *h_fake_all_jesup, *h_miss_all_jesup, *h_matchedtruth_weighted_all_jesup, *h_matchedtruth_unweighted_all_jesup, *h_measure_unweighted_all_jesup;
+  build_hist("all_jesup", h_truth_all_jesup, h_measure_all_jesup, h_respmatrix_all_jesup, h_fake_all_jesup, h_miss_all_jesup, h_matchedtruth_weighted_all_jesup, h_matchedtruth_unweighted_all_jesup, h_measure_unweighted_all_jesup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_all_jesdown; TH1DBootstrap *h_truth_all_jesdown, *h_measure_all_jesdown, *h_fake_all_jesdown, *h_miss_all_jesdown, *h_matchedtruth_weighted_all_jesdown, *h_matchedtruth_unweighted_all_jesdown, *h_measure_unweighted_all_jesdown;
+  build_hist("all_jesdown", h_truth_all_jesdown, h_measure_all_jesdown, h_respmatrix_all_jesdown, h_fake_all_jesdown, h_miss_all_jesdown, h_matchedtruth_weighted_all_jesdown, h_matchedtruth_unweighted_all_jesdown, h_measure_unweighted_all_jesdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jesup; TH1DBootstrap *h_truth_zvertex30_jesup, *h_measure_zvertex30_jesup, *h_fake_zvertex30_jesup, *h_miss_zvertex30_jesup, *h_matchedtruth_weighted_zvertex30_jesup, *h_matchedtruth_unweighted_zvertex30_jesup, *h_measure_unweighted_zvertex30_jesup;
+  build_hist("zvertex30_jesup", h_truth_zvertex30_jesup, h_measure_zvertex30_jesup, h_respmatrix_zvertex30_jesup, h_fake_zvertex30_jesup, h_miss_zvertex30_jesup, h_matchedtruth_weighted_zvertex30_jesup, h_matchedtruth_unweighted_zvertex30_jesup, h_measure_unweighted_zvertex30_jesup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jesdown; TH1DBootstrap *h_truth_zvertex30_jesdown, *h_measure_zvertex30_jesdown, *h_fake_zvertex30_jesdown, *h_miss_zvertex30_jesdown, *h_matchedtruth_weighted_zvertex30_jesdown, *h_matchedtruth_unweighted_zvertex30_jesdown, *h_measure_unweighted_zvertex30_jesdown;
+  build_hist("zvertex30_jesdown", h_truth_zvertex30_jesdown, h_measure_zvertex30_jesdown, h_respmatrix_zvertex30_jesdown, h_fake_zvertex30_jesdown, h_miss_zvertex30_jesdown, h_matchedtruth_weighted_zvertex30_jesdown, h_matchedtruth_unweighted_zvertex30_jesdown, h_measure_unweighted_zvertex30_jesdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jesup; TH1DBootstrap *h_truth_zvertex60_jesup, *h_measure_zvertex60_jesup, *h_fake_zvertex60_jesup, *h_miss_zvertex60_jesup, *h_matchedtruth_weighted_zvertex60_jesup, *h_matchedtruth_unweighted_zvertex60_jesup, *h_measure_unweighted_zvertex60_jesup;
+  build_hist("zvertex60_jesup", h_truth_zvertex60_jesup, h_measure_zvertex60_jesup, h_respmatrix_zvertex60_jesup, h_fake_zvertex60_jesup, h_miss_zvertex60_jesup, h_matchedtruth_weighted_zvertex60_jesup, h_matchedtruth_unweighted_zvertex60_jesup, h_measure_unweighted_zvertex60_jesup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jesdown; TH1DBootstrap *h_truth_zvertex60_jesdown, *h_measure_zvertex60_jesdown, *h_fake_zvertex60_jesdown, *h_miss_zvertex60_jesdown, *h_matchedtruth_weighted_zvertex60_jesdown, *h_matchedtruth_unweighted_zvertex60_jesdown, *h_measure_unweighted_zvertex60_jesdown;
+  build_hist("zvertex60_jesdown", h_truth_zvertex60_jesdown, h_measure_zvertex60_jesdown, h_respmatrix_zvertex60_jesdown, h_fake_zvertex60_jesdown, h_miss_zvertex60_jesdown, h_matchedtruth_weighted_zvertex60_jesdown, h_matchedtruth_unweighted_zvertex60_jesdown, h_measure_unweighted_zvertex60_jesdown, bsgen, nrep);
 
   // JER up/down histograms
-  TH2D *h_respmatrix_all_jerup; TH1D *h_truth_all_jerup, *h_measure_all_jerup, *h_fake_all_jerup, *h_miss_all_jerup, *h_matchedtruth_weighted_all_jerup, *h_matchedtruth_unweighted_all_jerup, *h_measure_unweighted_all_jerup;
-  build_hist("all_jerup", h_truth_all_jerup, h_measure_all_jerup, h_respmatrix_all_jerup, h_fake_all_jerup, h_miss_all_jerup, h_matchedtruth_weighted_all_jerup, h_matchedtruth_unweighted_all_jerup, h_measure_unweighted_all_jerup);
-  TH2D *h_respmatrix_all_jerdown; TH1D *h_truth_all_jerdown, *h_measure_all_jerdown, *h_fake_all_jerdown, *h_miss_all_jerdown, *h_matchedtruth_weighted_all_jerdown, *h_matchedtruth_unweighted_all_jerdown, *h_measure_unweighted_all_jerdown;
-  build_hist("all_jerdown", h_truth_all_jerdown, h_measure_all_jerdown, h_respmatrix_all_jerdown, h_fake_all_jerdown, h_miss_all_jerdown, h_matchedtruth_weighted_all_jerdown, h_matchedtruth_unweighted_all_jerdown, h_measure_unweighted_all_jerdown);
-  TH2D *h_respmatrix_zvertex30_jerup; TH1D *h_truth_zvertex30_jerup, *h_measure_zvertex30_jerup, *h_fake_zvertex30_jerup, *h_miss_zvertex30_jerup, *h_matchedtruth_weighted_zvertex30_jerup, *h_matchedtruth_unweighted_zvertex30_jerup, *h_measure_unweighted_zvertex30_jerup;
-  build_hist("zvertex30_jerup", h_truth_zvertex30_jerup, h_measure_zvertex30_jerup, h_respmatrix_zvertex30_jerup, h_fake_zvertex30_jerup, h_miss_zvertex30_jerup, h_matchedtruth_weighted_zvertex30_jerup, h_matchedtruth_unweighted_zvertex30_jerup, h_measure_unweighted_zvertex30_jerup);
-  TH2D *h_respmatrix_zvertex30_jerdown; TH1D *h_truth_zvertex30_jerdown, *h_measure_zvertex30_jerdown, *h_fake_zvertex30_jerdown, *h_miss_zvertex30_jerdown, *h_matchedtruth_weighted_zvertex30_jerdown, *h_matchedtruth_unweighted_zvertex30_jerdown, *h_measure_unweighted_zvertex30_jerdown;
-  build_hist("zvertex30_jerdown", h_truth_zvertex30_jerdown, h_measure_zvertex30_jerdown, h_respmatrix_zvertex30_jerdown, h_fake_zvertex30_jerdown, h_miss_zvertex30_jerdown, h_matchedtruth_weighted_zvertex30_jerdown, h_matchedtruth_unweighted_zvertex30_jerdown, h_measure_unweighted_zvertex30_jerdown);
-  TH2D *h_respmatrix_zvertex60_jerup; TH1D *h_truth_zvertex60_jerup, *h_measure_zvertex60_jerup, *h_fake_zvertex60_jerup, *h_miss_zvertex60_jerup, *h_matchedtruth_weighted_zvertex60_jerup, *h_matchedtruth_unweighted_zvertex60_jerup, *h_measure_unweighted_zvertex60_jerup;
-  build_hist("zvertex60_jerup", h_truth_zvertex60_jerup, h_measure_zvertex60_jerup, h_respmatrix_zvertex60_jerup, h_fake_zvertex60_jerup, h_miss_zvertex60_jerup, h_matchedtruth_weighted_zvertex60_jerup, h_matchedtruth_unweighted_zvertex60_jerup, h_measure_unweighted_zvertex60_jerup);
-  TH2D *h_respmatrix_zvertex60_jerdown; TH1D *h_truth_zvertex60_jerdown, *h_measure_zvertex60_jerdown, *h_fake_zvertex60_jerdown, *h_miss_zvertex60_jerdown, *h_matchedtruth_weighted_zvertex60_jerdown, *h_matchedtruth_unweighted_zvertex60_jerdown, *h_measure_unweighted_zvertex60_jerdown;
-  build_hist("zvertex60_jerdown", h_truth_zvertex60_jerdown, h_measure_zvertex60_jerdown, h_respmatrix_zvertex60_jerdown, h_fake_zvertex60_jerdown, h_miss_zvertex60_jerdown, h_matchedtruth_weighted_zvertex60_jerdown, h_matchedtruth_unweighted_zvertex60_jerdown, h_measure_unweighted_zvertex60_jerdown);
+  TH2DBootstrap *h_respmatrix_all_jerup; TH1DBootstrap *h_truth_all_jerup, *h_measure_all_jerup, *h_fake_all_jerup, *h_miss_all_jerup, *h_matchedtruth_weighted_all_jerup, *h_matchedtruth_unweighted_all_jerup, *h_measure_unweighted_all_jerup;
+  build_hist("all_jerup", h_truth_all_jerup, h_measure_all_jerup, h_respmatrix_all_jerup, h_fake_all_jerup, h_miss_all_jerup, h_matchedtruth_weighted_all_jerup, h_matchedtruth_unweighted_all_jerup, h_measure_unweighted_all_jerup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_all_jerdown; TH1DBootstrap *h_truth_all_jerdown, *h_measure_all_jerdown, *h_fake_all_jerdown, *h_miss_all_jerdown, *h_matchedtruth_weighted_all_jerdown, *h_matchedtruth_unweighted_all_jerdown, *h_measure_unweighted_all_jerdown;
+  build_hist("all_jerdown", h_truth_all_jerdown, h_measure_all_jerdown, h_respmatrix_all_jerdown, h_fake_all_jerdown, h_miss_all_jerdown, h_matchedtruth_weighted_all_jerdown, h_matchedtruth_unweighted_all_jerdown, h_measure_unweighted_all_jerdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jerup; TH1DBootstrap *h_truth_zvertex30_jerup, *h_measure_zvertex30_jerup, *h_fake_zvertex30_jerup, *h_miss_zvertex30_jerup, *h_matchedtruth_weighted_zvertex30_jerup, *h_matchedtruth_unweighted_zvertex30_jerup, *h_measure_unweighted_zvertex30_jerup;
+  build_hist("zvertex30_jerup", h_truth_zvertex30_jerup, h_measure_zvertex30_jerup, h_respmatrix_zvertex30_jerup, h_fake_zvertex30_jerup, h_miss_zvertex30_jerup, h_matchedtruth_weighted_zvertex30_jerup, h_matchedtruth_unweighted_zvertex30_jerup, h_measure_unweighted_zvertex30_jerup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jerdown; TH1DBootstrap *h_truth_zvertex30_jerdown, *h_measure_zvertex30_jerdown, *h_fake_zvertex30_jerdown, *h_miss_zvertex30_jerdown, *h_matchedtruth_weighted_zvertex30_jerdown, *h_matchedtruth_unweighted_zvertex30_jerdown, *h_measure_unweighted_zvertex30_jerdown;
+  build_hist("zvertex30_jerdown", h_truth_zvertex30_jerdown, h_measure_zvertex30_jerdown, h_respmatrix_zvertex30_jerdown, h_fake_zvertex30_jerdown, h_miss_zvertex30_jerdown, h_matchedtruth_weighted_zvertex30_jerdown, h_matchedtruth_unweighted_zvertex30_jerdown, h_measure_unweighted_zvertex30_jerdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jerup; TH1DBootstrap *h_truth_zvertex60_jerup, *h_measure_zvertex60_jerup, *h_fake_zvertex60_jerup, *h_miss_zvertex60_jerup, *h_matchedtruth_weighted_zvertex60_jerup, *h_matchedtruth_unweighted_zvertex60_jerup, *h_measure_unweighted_zvertex60_jerup;
+  build_hist("zvertex60_jerup", h_truth_zvertex60_jerup, h_measure_zvertex60_jerup, h_respmatrix_zvertex60_jerup, h_fake_zvertex60_jerup, h_miss_zvertex60_jerup, h_matchedtruth_weighted_zvertex60_jerup, h_matchedtruth_unweighted_zvertex60_jerup, h_measure_unweighted_zvertex60_jerup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jerdown; TH1DBootstrap *h_truth_zvertex60_jerdown, *h_measure_zvertex60_jerdown, *h_fake_zvertex60_jerdown, *h_miss_zvertex60_jerdown, *h_matchedtruth_weighted_zvertex60_jerdown, *h_matchedtruth_unweighted_zvertex60_jerdown, *h_measure_unweighted_zvertex60_jerdown;
+  build_hist("zvertex60_jerdown", h_truth_zvertex60_jerdown, h_measure_zvertex60_jerdown, h_respmatrix_zvertex60_jerdown, h_fake_zvertex60_jerdown, h_miss_zvertex60_jerdown, h_matchedtruth_weighted_zvertex60_jerdown, h_matchedtruth_unweighted_zvertex60_jerdown, h_measure_unweighted_zvertex60_jerdown, bsgen, nrep);
 
   // Jet trigger up/down histograms
-  TH2D *h_respmatrix_all_jetup; TH1D *h_truth_all_jetup, *h_measure_all_jetup, *h_fake_all_jetup, *h_miss_all_jetup, *h_matchedtruth_weighted_all_jetup, *h_matchedtruth_unweighted_all_jetup, *h_measure_unweighted_all_jetup;
-  build_hist("all_jetup", h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup, h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup);
-  TH2D *h_respmatrix_all_jetdown; TH1D *h_truth_all_jetdown, *h_measure_all_jetdown, *h_fake_all_jetdown, *h_miss_all_jetdown, *h_matchedtruth_weighted_all_jetdown, *h_matchedtruth_unweighted_all_jetdown, *h_measure_unweighted_all_jetdown;
-  build_hist("all_jetdown", h_truth_all_jetdown, h_measure_all_jetdown, h_respmatrix_all_jetdown, h_fake_all_jetdown, h_miss_all_jetdown, h_matchedtruth_weighted_all_jetdown, h_matchedtruth_unweighted_all_jetdown, h_measure_unweighted_all_jetdown);
-  TH2D *h_respmatrix_zvertex30_jetup; TH1D *h_truth_zvertex30_jetup, *h_measure_zvertex30_jetup, *h_fake_zvertex30_jetup, *h_miss_zvertex30_jetup, *h_matchedtruth_weighted_zvertex30_jetup, *h_matchedtruth_unweighted_zvertex30_jetup, *h_measure_unweighted_zvertex30_jetup;
-  build_hist("zvertex30_jetup", h_truth_zvertex30_jetup, h_measure_zvertex30_jetup, h_respmatrix_zvertex30_jetup, h_fake_zvertex30_jetup, h_miss_zvertex30_jetup, h_matchedtruth_weighted_zvertex30_jetup, h_matchedtruth_unweighted_zvertex30_jetup, h_measure_unweighted_zvertex30_jetup);
-  TH2D *h_respmatrix_zvertex30_jetdown; TH1D *h_truth_zvertex30_jetdown, *h_measure_zvertex30_jetdown, *h_fake_zvertex30_jetdown, *h_miss_zvertex30_jetdown, *h_matchedtruth_weighted_zvertex30_jetdown, *h_matchedtruth_unweighted_zvertex30_jetdown, *h_measure_unweighted_zvertex30_jetdown;
-  build_hist("zvertex30_jetdown", h_truth_zvertex30_jetdown, h_measure_zvertex30_jetdown, h_respmatrix_zvertex30_jetdown, h_fake_zvertex30_jetdown, h_miss_zvertex30_jetdown, h_matchedtruth_weighted_zvertex30_jetdown, h_matchedtruth_unweighted_zvertex30_jetdown, h_measure_unweighted_zvertex30_jetdown);
-  TH2D *h_respmatrix_zvertex60_jetup; TH1D *h_truth_zvertex60_jetup, *h_measure_zvertex60_jetup, *h_fake_zvertex60_jetup, *h_miss_zvertex60_jetup, *h_matchedtruth_weighted_zvertex60_jetup, *h_matchedtruth_unweighted_zvertex60_jetup, *h_measure_unweighted_zvertex60_jetup;
-  build_hist("zvertex60_jetup", h_truth_zvertex60_jetup, h_measure_zvertex60_jetup, h_respmatrix_zvertex60_jetup, h_fake_zvertex60_jetup, h_miss_zvertex60_jetup, h_matchedtruth_weighted_zvertex60_jetup, h_matchedtruth_unweighted_zvertex60_jetup, h_measure_unweighted_zvertex60_jetup);
-  TH2D *h_respmatrix_zvertex60_jetdown; TH1D *h_truth_zvertex60_jetdown, *h_measure_zvertex60_jetdown, *h_fake_zvertex60_jetdown, *h_miss_zvertex60_jetdown, *h_matchedtruth_weighted_zvertex60_jetdown, *h_matchedtruth_unweighted_zvertex60_jetdown, *h_measure_unweighted_zvertex60_jetdown;
-  build_hist("zvertex60_jetdown", h_truth_zvertex60_jetdown, h_measure_zvertex60_jetdown, h_respmatrix_zvertex60_jetdown, h_fake_zvertex60_jetdown, h_miss_zvertex60_jetdown, h_matchedtruth_weighted_zvertex60_jetdown, h_matchedtruth_unweighted_zvertex60_jetdown, h_measure_unweighted_zvertex60_jetdown);
+  TH2DBootstrap *h_respmatrix_all_jetup; TH1DBootstrap *h_truth_all_jetup, *h_measure_all_jetup, *h_fake_all_jetup, *h_miss_all_jetup, *h_matchedtruth_weighted_all_jetup, *h_matchedtruth_unweighted_all_jetup, *h_measure_unweighted_all_jetup;
+  build_hist("all_jetup", h_truth_all_jetup, h_measure_all_jetup, h_respmatrix_all_jetup, h_fake_all_jetup, h_miss_all_jetup, h_matchedtruth_weighted_all_jetup, h_matchedtruth_unweighted_all_jetup, h_measure_unweighted_all_jetup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_all_jetdown; TH1DBootstrap *h_truth_all_jetdown, *h_measure_all_jetdown, *h_fake_all_jetdown, *h_miss_all_jetdown, *h_matchedtruth_weighted_all_jetdown, *h_matchedtruth_unweighted_all_jetdown, *h_measure_unweighted_all_jetdown;
+  build_hist("all_jetdown", h_truth_all_jetdown, h_measure_all_jetdown, h_respmatrix_all_jetdown, h_fake_all_jetdown, h_miss_all_jetdown, h_matchedtruth_weighted_all_jetdown, h_matchedtruth_unweighted_all_jetdown, h_measure_unweighted_all_jetdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jetup; TH1DBootstrap *h_truth_zvertex30_jetup, *h_measure_zvertex30_jetup, *h_fake_zvertex30_jetup, *h_miss_zvertex30_jetup, *h_matchedtruth_weighted_zvertex30_jetup, *h_matchedtruth_unweighted_zvertex30_jetup, *h_measure_unweighted_zvertex30_jetup;
+  build_hist("zvertex30_jetup", h_truth_zvertex30_jetup, h_measure_zvertex30_jetup, h_respmatrix_zvertex30_jetup, h_fake_zvertex30_jetup, h_miss_zvertex30_jetup, h_matchedtruth_weighted_zvertex30_jetup, h_matchedtruth_unweighted_zvertex30_jetup, h_measure_unweighted_zvertex30_jetup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_jetdown; TH1DBootstrap *h_truth_zvertex30_jetdown, *h_measure_zvertex30_jetdown, *h_fake_zvertex30_jetdown, *h_miss_zvertex30_jetdown, *h_matchedtruth_weighted_zvertex30_jetdown, *h_matchedtruth_unweighted_zvertex30_jetdown, *h_measure_unweighted_zvertex30_jetdown;
+  build_hist("zvertex30_jetdown", h_truth_zvertex30_jetdown, h_measure_zvertex30_jetdown, h_respmatrix_zvertex30_jetdown, h_fake_zvertex30_jetdown, h_miss_zvertex30_jetdown, h_matchedtruth_weighted_zvertex30_jetdown, h_matchedtruth_unweighted_zvertex30_jetdown, h_measure_unweighted_zvertex30_jetdown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jetup; TH1DBootstrap *h_truth_zvertex60_jetup, *h_measure_zvertex60_jetup, *h_fake_zvertex60_jetup, *h_miss_zvertex60_jetup, *h_matchedtruth_weighted_zvertex60_jetup, *h_matchedtruth_unweighted_zvertex60_jetup, *h_measure_unweighted_zvertex60_jetup;
+  build_hist("zvertex60_jetup", h_truth_zvertex60_jetup, h_measure_zvertex60_jetup, h_respmatrix_zvertex60_jetup, h_fake_zvertex60_jetup, h_miss_zvertex60_jetup, h_matchedtruth_weighted_zvertex60_jetup, h_matchedtruth_unweighted_zvertex60_jetup, h_measure_unweighted_zvertex60_jetup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_jetdown; TH1DBootstrap *h_truth_zvertex60_jetdown, *h_measure_zvertex60_jetdown, *h_fake_zvertex60_jetdown, *h_miss_zvertex60_jetdown, *h_matchedtruth_weighted_zvertex60_jetdown, *h_matchedtruth_unweighted_zvertex60_jetdown, *h_measure_unweighted_zvertex60_jetdown;
+  build_hist("zvertex60_jetdown", h_truth_zvertex60_jetdown, h_measure_zvertex60_jetdown, h_respmatrix_zvertex60_jetdown, h_fake_zvertex60_jetdown, h_miss_zvertex60_jetdown, h_matchedtruth_weighted_zvertex60_jetdown, h_matchedtruth_unweighted_zvertex60_jetdown, h_measure_unweighted_zvertex60_jetdown, bsgen, nrep);
 
   // MBD trigger up/down histograms
-  TH2D *h_respmatrix_zvertex30_mbdup; TH1D *h_truth_zvertex30_mbdup, *h_measure_zvertex30_mbdup, *h_fake_zvertex30_mbdup, *h_miss_zvertex30_mbdup, *h_matchedtruth_weighted_zvertex30_mbdup, *h_matchedtruth_unweighted_zvertex30_mbdup, *h_measure_unweighted_zvertex30_mbdup;
-  build_hist("zvertex30_mbdup", h_truth_zvertex30_mbdup, h_measure_zvertex30_mbdup, h_respmatrix_zvertex30_mbdup, h_fake_zvertex30_mbdup, h_miss_zvertex30_mbdup, h_matchedtruth_weighted_zvertex30_mbdup, h_matchedtruth_unweighted_zvertex30_mbdup, h_measure_unweighted_zvertex30_mbdup);
-  TH2D *h_respmatrix_zvertex30_mbddown; TH1D *h_truth_zvertex30_mbddown, *h_measure_zvertex30_mbddown, *h_fake_zvertex30_mbddown, *h_miss_zvertex30_mbddown, *h_matchedtruth_weighted_zvertex30_mbddown, *h_matchedtruth_unweighted_zvertex30_mbddown, *h_measure_unweighted_zvertex30_mbddown;
-  build_hist("zvertex30_mbddown", h_truth_zvertex30_mbddown, h_measure_zvertex30_mbddown, h_respmatrix_zvertex30_mbddown, h_fake_zvertex30_mbddown, h_miss_zvertex30_mbddown, h_matchedtruth_weighted_zvertex30_mbddown, h_matchedtruth_unweighted_zvertex30_mbddown, h_measure_unweighted_zvertex30_mbddown);
-  TH2D *h_respmatrix_zvertex60_mbdup; TH1D *h_truth_zvertex60_mbdup, *h_measure_zvertex60_mbdup, *h_fake_zvertex60_mbdup, *h_miss_zvertex60_mbdup, *h_matchedtruth_weighted_zvertex60_mbdup, *h_matchedtruth_unweighted_zvertex60_mbdup, *h_measure_unweighted_zvertex60_mbdup;
-  build_hist("zvertex60_mbdup", h_truth_zvertex60_mbdup, h_measure_zvertex60_mbdup, h_respmatrix_zvertex60_mbdup, h_fake_zvertex60_mbdup, h_miss_zvertex60_mbdup, h_matchedtruth_weighted_zvertex60_mbdup, h_matchedtruth_unweighted_zvertex60_mbdup, h_measure_unweighted_zvertex60_mbdup);
-  TH2D *h_respmatrix_zvertex60_mbddown; TH1D *h_truth_zvertex60_mbddown, *h_measure_zvertex60_mbddown, *h_fake_zvertex60_mbddown, *h_miss_zvertex60_mbddown, *h_matchedtruth_weighted_zvertex60_mbddown, *h_matchedtruth_unweighted_zvertex60_mbddown, *h_measure_unweighted_zvertex60_mbddown;
-  build_hist("zvertex60_mbddown", h_truth_zvertex60_mbddown, h_measure_zvertex60_mbddown, h_respmatrix_zvertex60_mbddown, h_fake_zvertex60_mbddown, h_miss_zvertex60_mbddown, h_matchedtruth_weighted_zvertex60_mbddown, h_matchedtruth_unweighted_zvertex60_mbddown, h_measure_unweighted_zvertex60_mbddown);
+  TH2DBootstrap *h_respmatrix_zvertex30_mbdup; TH1DBootstrap *h_truth_zvertex30_mbdup, *h_measure_zvertex30_mbdup, *h_fake_zvertex30_mbdup, *h_miss_zvertex30_mbdup, *h_matchedtruth_weighted_zvertex30_mbdup, *h_matchedtruth_unweighted_zvertex30_mbdup, *h_measure_unweighted_zvertex30_mbdup;
+  build_hist("zvertex30_mbdup", h_truth_zvertex30_mbdup, h_measure_zvertex30_mbdup, h_respmatrix_zvertex30_mbdup, h_fake_zvertex30_mbdup, h_miss_zvertex30_mbdup, h_matchedtruth_weighted_zvertex30_mbdup, h_matchedtruth_unweighted_zvertex30_mbdup, h_measure_unweighted_zvertex30_mbdup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex30_mbddown; TH1DBootstrap *h_truth_zvertex30_mbddown, *h_measure_zvertex30_mbddown, *h_fake_zvertex30_mbddown, *h_miss_zvertex30_mbddown, *h_matchedtruth_weighted_zvertex30_mbddown, *h_matchedtruth_unweighted_zvertex30_mbddown, *h_measure_unweighted_zvertex30_mbddown;
+  build_hist("zvertex30_mbddown", h_truth_zvertex30_mbddown, h_measure_zvertex30_mbddown, h_respmatrix_zvertex30_mbddown, h_fake_zvertex30_mbddown, h_miss_zvertex30_mbddown, h_matchedtruth_weighted_zvertex30_mbddown, h_matchedtruth_unweighted_zvertex30_mbddown, h_measure_unweighted_zvertex30_mbddown, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_mbdup; TH1DBootstrap *h_truth_zvertex60_mbdup, *h_measure_zvertex60_mbdup, *h_fake_zvertex60_mbdup, *h_miss_zvertex60_mbdup, *h_matchedtruth_weighted_zvertex60_mbdup, *h_matchedtruth_unweighted_zvertex60_mbdup, *h_measure_unweighted_zvertex60_mbdup;
+  build_hist("zvertex60_mbdup", h_truth_zvertex60_mbdup, h_measure_zvertex60_mbdup, h_respmatrix_zvertex60_mbdup, h_fake_zvertex60_mbdup, h_miss_zvertex60_mbdup, h_matchedtruth_weighted_zvertex60_mbdup, h_matchedtruth_unweighted_zvertex60_mbdup, h_measure_unweighted_zvertex60_mbdup, bsgen, nrep);
+  TH2DBootstrap *h_respmatrix_zvertex60_mbddown; TH1DBootstrap *h_truth_zvertex60_mbddown, *h_measure_zvertex60_mbddown, *h_fake_zvertex60_mbddown, *h_miss_zvertex60_mbddown, *h_matchedtruth_weighted_zvertex60_mbddown, *h_matchedtruth_unweighted_zvertex60_mbddown, *h_measure_unweighted_zvertex60_mbddown;
+  build_hist("zvertex60_mbddown", h_truth_zvertex60_mbddown, h_measure_zvertex60_mbddown, h_respmatrix_zvertex60_mbddown, h_fake_zvertex60_mbddown, h_miss_zvertex60_mbddown, h_matchedtruth_weighted_zvertex60_mbddown, h_matchedtruth_unweighted_zvertex60_mbddown, h_measure_unweighted_zvertex60_mbddown, bsgen, nrep);
 
   // Closure test histograms
-  TH1D *h_fullclosure_measure_zvertex60 = new TH1D("h_fullclosure_measure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  TH1D *h_fullclosure_truth_zvertex60 = new TH1D("h_fullclosure_truth_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
-  TH2D *h_fullclosure_respmatrix_zvertex60 = new TH2D("h_fullclosure_respmatrix_zvertex60", ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
-  TH1D *h_fullclosure_fake_zvertex60 = new TH1D("h_fullclosure_fake_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  TH1D *h_fullclosure_miss_zvertex60 = new TH1D("h_fullclosure_miss_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
+  TH1DBootstrap *h_fullclosure_measure_zvertex60 = new TH1DBootstrap("h_fullclosure_measure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_fullclosure_truth_zvertex60 = new TH1DBootstrap("h_fullclosure_truth_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
+  TH2DBootstrap *h_fullclosure_respmatrix_zvertex60 = new TH2DBootstrap("h_fullclosure_respmatrix_zvertex60", ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins, nrep, bsgen);
+  TH1DBootstrap *h_fullclosure_fake_zvertex60 = new TH1DBootstrap("h_fullclosure_fake_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_fullclosure_miss_zvertex60 = new TH1DBootstrap("h_fullclosure_miss_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
 
-  TH1D *h_halfclosure_inputmeasure_zvertex60 = new TH1D("h_halfclosure_inputmeasure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  TH1D *h_halfclosure_measure_zvertex60 = new TH1D("h_halfclosure_measure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  TH1D *h_halfclosure_truth_zvertex60 = new TH1D("h_halfclosure_truth_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
-  TH2D *h_halfclosure_respmatrix_zvertex60 = new TH2D("h_halfclosure_respmatrix_zvertex60", ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
-  TH1D *h_halfclosure_fake_zvertex60 = new TH1D("h_halfclosure_fake_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins);
-  TH1D *h_halfclosure_miss_zvertex60 = new TH1D("h_halfclosure_miss_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins);
+  TH1DBootstrap *h_halfclosure_inputmeasure_zvertex60 = new TH1DBootstrap("h_halfclosure_inputmeasure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_halfclosure_measure_zvertex60 = new TH1DBootstrap("h_halfclosure_measure_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_halfclosure_truth_zvertex60 = new TH1DBootstrap("h_halfclosure_truth_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
+  TH2DBootstrap *h_halfclosure_respmatrix_zvertex60 = new TH2DBootstrap("h_halfclosure_respmatrix_zvertex60", ";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins, nrep, bsgen);
+  TH1DBootstrap *h_halfclosure_fake_zvertex60 = new TH1DBootstrap("h_halfclosure_fake_zvertex60", ";p_{T}^{Calib jet} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_halfclosure_miss_zvertex60 = new TH1DBootstrap("h_halfclosure_miss_zvertex60", ";p_{T}^{Truth jet} [GeV]", truthnpt, truthptbins, nrep, bsgen);
 
 
   
@@ -1007,28 +1013,28 @@ int analyze_segment_sim(string runtype, int iseg, int nseg, int radius_index)
 	{
 	  for (int im = 0; im < calibjet_pt.size(); ++im)
 	    {
-	      h_fullclosure_measure_zvertex60->Fill(calibjet_pt[im]);
-	      if ((i/5) % 2 == 0) h_halfclosure_measure_zvertex60->Fill(calibjet_pt[im]);
-	      else h_halfclosure_inputmeasure_zvertex60->Fill(calibjet_pt[im]);
+	      h_fullclosure_measure_zvertex60->Fill(calibjet_pt[im], 1.0);
+	      if ((i/5) % 2 == 0) h_halfclosure_measure_zvertex60->Fill(calibjet_pt[im], 1.0);
+	      else h_halfclosure_inputmeasure_zvertex60->Fill(calibjet_pt[im], 1.0);
 	      if (calibjet_matched[im] < 0)
 		{
-		  h_fullclosure_fake_zvertex60->Fill(calibjet_pt[im]);
-		  if ((i/5) % 2 == 0) h_halfclosure_fake_zvertex60->Fill(calibjet_pt[im]);
+		  h_fullclosure_fake_zvertex60->Fill(calibjet_pt[im], 1.0);
+		  if ((i/5) % 2 == 0) h_halfclosure_fake_zvertex60->Fill(calibjet_pt[im], 1.0);
 		}
 	      else
 		{
-		  h_fullclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
-		  if ((i/5) % 2 == 0) h_halfclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]]);
+		  h_fullclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]], 1.0);
+		  if ((i/5) % 2 == 0) h_halfclosure_respmatrix_zvertex60->Fill(calibjet_pt[im], goodtruthjet_pt[calibjet_matched[im]], 1.0);
 		}
 	    }
 	  for (int it = 0; it < goodtruthjet_pt.size(); ++it)
 	    {
-	      h_fullclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
-	      if ((i/5) % 2 == 0) h_halfclosure_truth_zvertex60->Fill(goodtruthjet_pt[it]);
+	      h_fullclosure_truth_zvertex60->Fill(goodtruthjet_pt[it], 1.0);
+	      if ((i/5) % 2 == 0) h_halfclosure_truth_zvertex60->Fill(goodtruthjet_pt[it], 1.0);
 	      if (goodtruthjet_matched[it] < 0)
 		{
-		  h_fullclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
-		  if ((i/5) % 2 == 0) h_halfclosure_miss_zvertex60->Fill(goodtruthjet_pt[it]);
+		  h_fullclosure_miss_zvertex60->Fill(goodtruthjet_pt[it], 1.0);
+		  if ((i/5) % 2 == 0) h_halfclosure_miss_zvertex60->Fill(goodtruthjet_pt[it], 1.0);
 		}
 	    }
 	}

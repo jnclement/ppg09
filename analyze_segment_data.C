@@ -1,4 +1,9 @@
 #include "unfold_Def.h"
+R__LOAD_LIBRARY(libBootstrapGenerator.so)
+#include "BootstrapGenerator/BootstrapGenerator.h"
+#include "BootstrapGenerator/TH1DBootstrap.h"
+
+
 float min_dphi = 3*M_PI/4;
 float jet_rad = 0.4;
 void get_l_sl_jet(int& lindex, int& sindex, float* jet_pt, int jet_n)
@@ -188,6 +193,10 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
   mbt[1] = (TF1*)fmb->Get(("mbdtrig0"+to_string(jet_radius_index)+"_up").c_str());
   mbt[2] = (TF1*)fmb->Get(("mbdtrig0"+to_string(jet_radius_index)+"_down").c_str());
 
+  const int nrep = 100;
+
+  auto bsgen = new BootstrapGenerator("bsGen","bsGen",nrep);
+  
   TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
   TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
   TH1D *h_event_passed = new TH1D("h_event_passed", ";Event Number", 1, 0, 1);
@@ -201,29 +210,29 @@ int analyze_segment_data(int iseg, int nseg, int jet_radius_index = 4)
 
   TH1D *h_calibjet_pt_record_all_noweight = new TH1D("h_calibjet_pt_record_all_noweight", ";p_{T} [GeV]", 1000, 0, 100);
 
-  TH1D *h_calibjet_pt_all = new TH1D("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_all_jetup = new TH1D("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_all_jetdown = new TH1D("h_calibjet_pt_all_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1DBootstrap *h_calibjet_pt_all = new TH1DBootstrap("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_all_jetup = new TH1DBootstrap("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_all_jetdown = new TH1DBootstrap("h_calibjet_pt_all_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
   TH1D *h_calibjet_pt_record_all = new TH1D("h_calibjet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_all_jetup = new TH1D("h_calibjet_pt_record_all_jetup", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_all_jetdown = new TH1D("h_calibjet_pt_record_all_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
   
-  TH1D *h_calibjet_pt_zvertex30 = new TH1D("h_calibjet_pt_zvertex30", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex30_jetup = new TH1D("h_calibjet_pt_zvertex30_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex30_jetdown = new TH1D("h_calibjet_pt_zvertex30_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex30_mbdup = new TH1D("h_calibjet_pt_zvertex30_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex30_mbddown = new TH1D("h_calibjet_pt_zvertex30_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1DBootstrap *h_calibjet_pt_zvertex30 = new TH1DBootstrap("h_calibjet_pt_zvertex30", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex30_jetup = new TH1DBootstrap("h_calibjet_pt_zvertex30_jetup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex30_jetdown = new TH1DBootstrap("h_calibjet_pt_zvertex30_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex30_mbdup = new TH1DBootstrap("h_calibjet_pt_zvertex30_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex30_mbddown = new TH1DBootstrap("h_calibjet_pt_zvertex30_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
   TH1D *h_calibjet_pt_record_zvertex30 = new TH1D("h_calibjet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex30_jetup = new TH1D("h_calibjet_pt_record_zvertex30_jetup", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex30_jetdown = new TH1D("h_calibjet_pt_record_zvertex30_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex30_mbdup = new TH1D("h_calibjet_pt_record_zvertex30_mbdup", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex30_mbddown = new TH1D("h_calibjet_pt_record_zvertex30_mbddown", ";p_{T} [GeV]", 1000, 0, 100);  
 
-  TH1D *h_calibjet_pt_zvertex60 = new TH1D("h_calibjet_pt_zvertex60", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex60_jetup = new TH1D("h_calibjet_pt_zvertex60_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex60_jetdown = new TH1D("h_calibjet_pt_zvertex60_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex60_mbdup = new TH1D("h_calibjet_pt_zvertex60_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_zvertex60_mbddown = new TH1D("h_calibjet_pt_zvertex60_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1DBootstrap *h_calibjet_pt_zvertex60 = new TH1DBootstrap("h_calibjet_pt_zvertex60", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex60_jetup = new TH1DBootstrap("h_calibjet_pt_zvertex60_jetup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex60_jetdown = new TH1DBootstrap("h_calibjet_pt_zvertex60_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex60_mbdup = new TH1DBootstrap("h_calibjet_pt_zvertex60_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
+  TH1DBootstrap *h_calibjet_pt_zvertex60_mbddown = new TH1DBootstrap("h_calibjet_pt_zvertex60_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins, nrep, bsgen);
   TH1D *h_calibjet_pt_record_zvertex60 = new TH1D("h_calibjet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex60_jetup = new TH1D("h_calibjet_pt_record_zvertex60_jetup", ";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_calibjet_pt_record_zvertex60_jetdown = new TH1D("h_calibjet_pt_record_zvertex60_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
